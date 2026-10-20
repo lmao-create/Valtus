@@ -102,21 +102,21 @@ System-level branding: `/usr/share/plasma/look-and-feel/org.valtus.desktop`
 
 Default applications (one per function, verified available in noble):
 
-| Function | Application |
-|---|---|
-| Terminal | Konsole |
-| Files | Dolphin |
-| Editor | Kate |
-| Documents | Okular |
-| Web | Falkon |
-| Media | VLC |
-| Archives | Ark |
-| Screenshots | Spectacle (kde-spectacle) |
-| System settings | KDE System Settings |
-| System information | KInfoCenter |
-| Monitoring | Plasma System Monitor |
-| Software | Plasma Discover (apt/packagekit backend) |
-| Calculator | KCalc |
+| Function           | Application                              |
+| ------------------ | ---------------------------------------- |
+| Terminal           | Konsole                                  |
+| Files              | Dolphin                                  |
+| Editor             | Kate                                     |
+| Documents          | Okular                                   |
+| Web                | Falkon                                   |
+| Media              | VLC                                      |
+| Archives           | Ark                                      |
+| Screenshots        | Spectacle (kde-spectacle)                |
+| System settings    | KDE System Settings                      |
+| System information | KInfoCenter                              |
+| Monitoring         | Plasma System Monitor                    |
+| Software           | Plasma Discover (apt/packagekit backend) |
+| Calculator         | KCalc                                    |
 
 No SSH server, no remote desktop server, no telemetry, no account/cloud
 services are installed or enabled.

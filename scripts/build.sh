@@ -6,6 +6,7 @@
 set -o nounset
 set -o errtrace
 set -o pipefail
+set -e
 shopt -s nullglob
 
 # --- Locate project (handles spaces in path) --------------------------------
@@ -41,7 +42,9 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/build-$TS.log"
 
 log() { echo "[build $(date +%H:%M:%S)] $*"; }
-die() { log "FATAL: $*"; stage_fail; exit 1; }
+die() { log "FATAL: $*"; log "FAILED during stage ${CURRENT_STAGE:-?}"; exit 1; }
+trap 'log "FAILED during stage ${CURRENT_STAGE:-?} (line ${BASH_LINENO:-?})"' ERR INT TERM
+trap 'umount_chroot >/dev/null 2>&1 || true' EXIT
 stage_fail() { log "FAILED during stage ${CURRENT_STAGE:-?} (line ${BASH_LINENO[0]:-?})"; }
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -509,8 +512,23 @@ if stage 5 finalize; then
   fi
 
   mkdir -p "$RELEASES"
-  cp -f "$ISO_OUT" "$RELEASES/$ISO_NAME"
+  # Publish memory-safely (dd small blocks after dropping caches): a plain
+  # cp of the 2 GB ISO through the /mnt/c filesystem failed with ENOMEM once.
+  # Remove the old artifact first so a truncated copy can never survive.
+  rm -f "$RELEASES/$ISO_NAME"
+  sync 2>/dev/null || true
+  echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+  dd if="$ISO_OUT" of="$RELEASES/$ISO_NAME" bs=1M status=none
+  sync 2>/dev/null || true
+  # Verify the published artifact byte-for-byte against the built ISO
+  if [ "$(stat -c %s "$ISO_OUT")" != "$(stat -c %s "$RELEASES/$ISO_NAME")" ]; then
+    die "published ISO size mismatch: $RELEASES/$ISO_NAME"
+  fi
+  if [ "$(sha256sum "$ISO_OUT" | awk '{print $1}')" != "$(sha256sum "$RELEASES/$ISO_NAME" | awk '{print $1}')" ]; then
+    die "published ISO checksum mismatch: $RELEASES/$ISO_NAME"
+  fi
   cp -f "$ISO_OUT.sha256" "$RELEASES/$ISO_NAME.sha256"
+  log "published and verified: $RELEASES/$ISO_NAME"
 
   KVER="$(ls -v "$ROOTFS"/boot/vmlinuz-* 2>/dev/null | tail -1 | sed 's|^.*/vmlinuz-||' || echo unknown)"
   PKG_COUNT="$(chroot "$ROOTFS" dpkg-query -f '.\n' -W 2>/dev/null | wc -l || echo 0)"
