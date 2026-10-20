@@ -102,6 +102,7 @@ wait_pat() { # pattern timeout_sec
   local deadline=$((SECONDS+secs))
   while [ $SECONDS -lt $deadline ]; do
     grep -q "$pattern" "$SERIAL_LOG" 2>/dev/null && return 0
+    ensure_reader          # self-heal: restart a dead reader mid-wait
     sleep 3
   done
   return 1
@@ -133,9 +134,22 @@ else
   bad "QEMU did not start"
 fi
 
-# single bidirectional serial client (a second client would drop the log)
-socat - "UNIX-CONNECT:$SERIAL_SOCK" < "$CMDFIFO" >> "$SERIAL_LOG" 2>/dev/null &
-RPID=$!
+# single bidirectional serial client (a second client would drop the log),
+# with restart-on-death: a silently-dead reader loses ALL boot evidence
+ensure_reader() {
+  if [ -n "${RPID:-}" ] && kill -0 "$RPID" 2>/dev/null; then return 0; fi
+  socat - "UNIX-CONNECT:$SERIAL_SOCK" < "$CMDFIFO" >> "$SERIAL_LOG" 2>>"$LOGDIR/reader.err" &
+  RPID=$!
+  sleep 1
+  if kill -0 "$RPID" 2>/dev/null; then
+    echo "reader alive pid=$RPID" >> "$LOGDIR/reader.state"
+  else
+    echo "reader DIED at $(date +%H:%M:%S)" >> "$LOGDIR/reader.state"
+    echo "--- reader.err ---" >> "$LOGDIR/reader.state"; cat "$LOGDIR/reader.err" >> "$LOGDIR/reader.state" 2>/dev/null
+    RPID=""
+  fi
+}
+ensure_reader
 
 # --- boot evidence -----------------------------------------------------------
 if wait_pat "GRUB" 90; then
