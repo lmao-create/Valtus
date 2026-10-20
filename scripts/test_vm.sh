@@ -61,8 +61,13 @@ mkdir -p "$LOGDIR"
 SERIAL_SOCK="$REALWORK/serial.sock"
 MON_SOCK="$REALWORK/monitor.sock"
 SERIAL_LOG="$LOGDIR/serial.log"
+CMDFIFO="$REALWORK/cmd.fifo"
 RESULTS="$LOGDIR/RESULTS.txt"
 : > "$SERIAL_LOG"
+mkfifo "$CMDFIFO"
+# keep the FIFO open for writing so socat never sees EOF
+sleep infinity > "$CMDFIFO" &
+KPID=$!
 echo "Valtus VM test — $TS" | tee "$RESULTS"
 echo "ISO: $ISO (entry $ENTRY, mem ${MEM}MB)" | tee -a "$RESULTS"
 
@@ -74,6 +79,7 @@ blk() { echo "BLOCKED: $*" | tee -a "$RESULTS"; BLOCKED=$((BLOCKED+1)); }
 cleanup() {
   [ -n "${QPID:-}" ] && kill "$QPID" 2>/dev/null
   [ -n "${RPID:-}" ] && kill "$RPID" 2>/dev/null
+  [ -n "${KPID:-}" ] && kill "$KPID" 2>/dev/null
   if [ "$KEEP" -eq 1 ]; then
     echo "VM work kept for inspection: $REALWORK" | tee -a "$RESULTS"
     return 0
@@ -86,7 +92,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-send() { printf '%s\n' "$1" | socat - "UNIX-CONNECT:$SERIAL_SOCK" 2>/dev/null; }
+send() { echo "$1" > "$CMDFIFO"; }
 mon()  { printf '%s\n' "$1" | socat - "UNIX-CONNECT:$MON_SOCK" 2>/dev/null; sleep 0.5; }
 shot() { local name="$1"; mon "screendump $REALWORK/screens/$name.ppm"; sleep 1; }
 
@@ -127,8 +133,8 @@ else
   bad "QEMU did not start"
 fi
 
-# persistent serial reader (keeps the socket drained)
-socat -u "UNIX-CONNECT:$SERIAL_SOCK" "OPEN:$SERIAL_LOG,creat,append" 2>/dev/null &
+# single bidirectional serial client (a second client would drop the log)
+socat - "UNIX-CONNECT:$SERIAL_SOCK" < "$CMDFIFO" >> "$SERIAL_LOG" 2>/dev/null &
 RPID=$!
 
 # --- boot evidence -----------------------------------------------------------
@@ -167,7 +173,7 @@ fi
 
 RUN_CHECK() { # name pattern command
   local name="$1" pattern="$2" cmd="$3" mark="###DONE-$RANDOM$RANDOM"
-  printf '%s\n' "$cmd; echo $mark" | socat - "UNIX-CONNECT:$SERIAL_SOCK" 2>/dev/null
+  { echo "$cmd"; echo "echo $mark"; } > "$CMDFIFO"
   if wait_pat "$mark" 60 && sed -n "/$mark/!p" "$SERIAL_LOG" | tail -40 | grep -q -- "$pattern"; then
     ok "$name"
   else
@@ -239,8 +245,7 @@ fi
 
 # --- shutdown -------------------------------------------------------------------
 shot 04-final
-printf '%s\n' "echo $LIVE_USER_PASSWORD | sudo -S systemctl poweroff" | \
-  socat - "UNIX-CONNECT:$SERIAL_SOCK" 2>/dev/null
+echo "echo $LIVE_USER_PASSWORD | sudo -S systemctl poweroff" > "$CMDFIFO"
 if wait_pat "reboot: Power down\|Power down" 120; then
   ok "guest shut down cleanly"
 else

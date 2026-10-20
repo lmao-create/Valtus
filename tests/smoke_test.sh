@@ -88,7 +88,19 @@ grep -q 'minlen' config/rootfs/etc/security/pwquality.conf.d/90-valtus.conf && o
 if grep -rsiq 'openssh-server' config/ 2>/dev/null; then bad "openssh-server present in shipped config (must not be enabled by default)"; else ok "no openssh-server in shipped config"; fi
 grep -rsi 'NOPASSWD' config/rootfs config/desktop >/dev/null 2>&1 && bad "NOPASSWD found in shipped config" || ok "no NOPASSWD in shipped config"
 
-# --- 8. VM harness safety guard ----------------------------------------------
+# --- 8. casper.conf functional invariants ------------------------------------
+BUILD_SYSTEM=$(grep -oP 'BUILD_SYSTEM="\K[^"]+' config/rootfs/etc/casper.conf 2>/dev/null)
+case "$BUILD_SYSTEM" in
+  Ubuntu|Debian) ok "casper BUILD_SYSTEM is functional ($BUILD_SYSTEM)" ;;
+  *) bad "casper BUILD_SYSTEM must be Ubuntu/Debian (else modprobe -b fails at boot): $BUILD_SYSTEM" ;;
+esac
+LIVEU=$(grep -oP 'USERNAME="\K[^"]+' config/rootfs/etc/casper.conf 2>/dev/null)
+[ "$LIVEU" = "$(. config/valtus.env; echo "$LIVE_USER")" ] >/dev/null 2>&1
+LIVEU2=$(grep -oP 'USERNAME="\K[^"]+' config/rootfs/etc/casper.conf 2>/dev/null)
+ENVU=$(. config/valtus.env 2>/dev/null; echo "$LIVE_USER")
+[ "$LIVEU2" = "$ENVU" ] && ok "casper USERNAME matches valtus.env" || bad "casper USERNAME mismatch: $LIVEU2 vs $ENVU"
+
+# --- 9. VM harness safety guard ----------------------------------------------
 grep -q 'valtus-vm-test-\*)' scripts/test_vm.sh && ok "test_vm.sh cleanup has guarded path" || bad "test_vm.sh cleanup guard missing"
 
 echo
