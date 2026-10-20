@@ -129,6 +129,7 @@ _Actual runs are recorded here; nothing is asserted without evidence._
 |---|---|---|---|
 | Static smoke | 2026-10-19 | repository checks | 43/43 assertions passed |
 | Build #1 | 2026-10-19 16:42 | full build | completed; found `/etc` world-writable defect (fixed build #2) |
-| Build #2 | 2026-10-19 17:42 | stages 3–5 rebuild | completed (sha256 3d12b767…); found rootfs root dir 777/uid-1000 |
-| Build #3 | 2026-10-20 09:17 | stages 3–5 rebuild | **BUILD OK**, sha256 fddbbdd7…, validation 11/11 |
-| VM test | — | boot + in-guest checks | see `logs/vm-test-*/RESULTS.txt` |
+| Build #2 | 2026-10-19 17:42 | stages 3–5 rebuild | completed; found rootfs root dir 777/uid-1000 |
+| Build #3 | 2026-10-20 09:17 | stages 3–5 rebuild | completed; validation 11/11 |
+| VM test #1 | 2026-10-20 10:49 | boot | **FAIL: “/cow format specified as 'overlay' and no support found”** — root-caused to `BUILD_SYSTEM="Valtus"` in casper.conf (casper then passes an empty `MP_QUIET` to `modprobe -b overlay`). Proven with `modprobe "" -b overlay` → rc=1 vs `modprobe -q -b overlay` → rc=0 inside the initramfs shell. Fixed (BUILD_SYSTEM=Ubuntu + smoke regression check); build #4 running |
+| VM test #2 | pending | full boot + in-guest checks | after build #4 |

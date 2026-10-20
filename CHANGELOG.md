@@ -40,12 +40,18 @@ based on Keep a Changelog, and the project uses semantic versioning.
 - World-writable/uid-1000 system files (DrvFs artifact of building against
   the `/mnt/c` project drive): build now normalizes ownership and permissions
   for all Valtus-added paths and the rootfs root directory.
+- **Live-boot failure “/cow format specified as 'overlay' and no support
+  found”** — `BUILD_SYSTEM` in `/etc/casper.conf` had been branded to
+  "Valtus"; casper-helpers maps that to an empty `MP_QUIET`, making casper
+  run `modprobe "" -b overlay`, which kmod rejects. `BUILD_SYSTEM` stays
+  "Ubuntu"; a smoke-test regression guard now enforces it.
 - usrmerge-safe `/etc/os-release` handling (no duplicate `cp`).
 - ISO validator EFI path casing (grub-mkrescue writes lowercase Rock Ridge
   `/efi/...`).
-- VM harness: `wait_pat` shell `local` evaluation order; boot entry
-  navigation; guarded cleanup (only the dedicated `/root/valtus-vm-test-*`
-  work directory is ever removed).
+- VM harness: `wait_pat` shell `local` evaluation order; single bidirectional
+  serial client via FIFO (a second client dropped the log reader); guarded
+  cleanup (only the dedicated `/root/valtus-vm-test-*` work directory is ever
+  removed).
 - KDE Plasma 6 package names for noble (`plasma-workspace-wayland`,
   `kde-spectacle`).
 

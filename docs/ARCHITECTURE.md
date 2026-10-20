@@ -52,7 +52,17 @@ iteration (~10 min) without re-downloading packages.
    (appends `[Autologin]` to `/etc/sddm.conf`), `25adduser` (creates the live
    user via `user-setup-apply` seeded from `/etc/casper.conf`, and writes
    `/etc/sudoers.d/casper` granting passwordless sudo).
-3. Valtus countermeasures:
+## 3. Boot flow and live-session provisioning
+
+> **Critical casper caveat (build #4 fix):** `BUILD_SYSTEM` in
+> `/etc/casper.conf` is *functional*, not cosmetic. casper-helpers maps
+> `BUILD_SYSTEM ∈ {Debian, Ubuntu}` → `MP_QUIET="-q"`; anything else → "",
+> which makes casper call `modprobe "" -b overlay`, which kmod rejects and
+> the boot dies at "/cow format specified as 'overlay' and no support
+> found". It stays "Ubuntu" (verified by smoke test); Valtus branding lives
+> in FLAVOUR/USERNAME/HOST and os-release.
+
+1. GRUB (BIOS or UEFI) → kernel `boot=casper` with serial console enabled.
    - **initramfs hook** `27valtus-credentials` (best effort): sets the
      documented password via `chpasswd`, removes the casper sudoers grant.
    - **systemd unit** `valtus-live-credentials.service` (authoritative; runs
