@@ -357,7 +357,11 @@ CREDEOF
     chmod 755 "$HOOK"
 
     # 7) Authoritative live-credentials service (runs inside the live system
-    #    before sddm; ConditionUser keeps it inert on installed systems)
+    #    before sddm). NOTE: systemd ConditionUser= evaluates FALSE in the
+    #    live-boot namespace even though the casper-created user exists (it
+    #    silently skipped this unit), so the gating happens in the script:
+    #    /cow exists only in live sessions; the user check keeps installed
+    #    systems untouched.
     log "installing valtus-live-credentials systemd service"
     mkdir -p "$(dirname "$LIVE_CREDS")"
     cat > "$LIVE_CREDS" <<CREDEOF2
@@ -366,6 +370,10 @@ CREDEOF
 set -u
 USER_NAME="$LIVE_USER"
 log() { logger -t valtus-live-credentials "\$*" 2>/dev/null || echo "valtus: \$*" >&2; }
+if [ ! -d /cow ]; then
+  log "not a live session (no /cow); nothing to do"
+  exit 0
+fi
 if ! id "\$USER_NAME" >/dev/null 2>&1; then
   log "user \$USER_NAME not present; nothing to do"
   exit 0
@@ -393,8 +401,7 @@ CREDEOF2
 Description=Valtus live session credentials
 DefaultDependencies=no
 After=local-fs.target
-Before=sddm.service
-ConditionUser=$LIVE_USER
+Before=sddm.service display-manager.service
 
 [Service]
 Type=oneshot
