@@ -74,6 +74,13 @@ done
 grep -q '<svg' branding/logos/valtus-logo.svg && ok "logo is valid SVG" || bad "logo SVG malformed"
 grep -q 'ColorScheme' branding/themes/ValtusDark.colors && ok "color scheme file looks right" || bad "color scheme malformed"
 
+# --- 6b. rootfs overlay layout (/etc-relative, rsync target) -----------------
+for f in etc/casper.conf etc/hostname etc/hosts etc/motd etc/issue \
+         etc/timezone etc/sysctl.d/90-valtus-hardening.conf \
+         etc/sddm.conf.d/valtus.conf etc/apt/sources.list; do
+  [ -f "config/rootfs/$f" ] && ok "overlay: $f" || bad "overlay misplaced/missing: $f"
+done
+
 # --- 7. security invariants in the shipped rootfs overlay --------------------
 grep -q 'kptr_restrict' config/rootfs/etc/sysctl.d/90-valtus-hardening.conf && ok "sysctl hardening present" || bad "sysctl hardening missing"
 grep -q 'minlen' config/rootfs/etc/security/pwquality.conf.d/90-valtus.conf && ok "pwquality policy present" || bad "pwquality missing"
