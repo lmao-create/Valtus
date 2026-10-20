@@ -27,8 +27,9 @@ based on Keep a Changelog, and the project uses semantic versioning.
   enabled at boot, unattended security upgrades, AppArmor, sysctl hardening
   set, PAM password quality policy (minlen 10, 3 classes).
 - Live-session credentials provisioning: casper-bottom initramfs hook +
-  authoritative `valtus-live-credentials.service` systemd unit
-  (`ConditionUser` keeps it inert on installed systems).
+  authoritative `valtus-live-credentials.service` systemd unit (gated in
+  script on the live-only `/cow` mount + user existence, so installed
+  systems are never affected).
 - Tooling: `scripts/validate.sh` (static ISO validation), `scripts/checksums.sh`,
   `scripts/test_vm.sh` (QEMU/KVM automated tests with serial logging, monitor
   screendumps, in-guest checks, RESULTS.txt), `tests/smoke_test.sh`,

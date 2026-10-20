@@ -71,8 +71,11 @@ iteration (~10 min) without re-downloading packages.
      `/etc/sddm.conf.d/zz-valtus-no-autologin.conf` (SDDM merges conf.d after
      `/etc/sddm.conf`, so an empty `User=` disables autologin) plus stripping
      any `[Autologin]` block from `/etc/sddm.conf`.
-   - The unit carries `ConditionUser=<LIVE_USER>`, so it is inert on installed
-     systems (no `valtus` account) and never touches user-chosen credentials.
+   - The unit does **not** use `ConditionUser=` — systemd evaluates it false in
+     the live-boot namespace even though the casper-created user exists (it
+     silently skipped the unit in early builds). The script itself gates on
+     the live-only `/cow` mount plus user existence, so installed systems are
+     never touched.
 4. SDDM starts → Plasma session (Wayland; X11 via the session menu).
 
 ## 4. Desktop configuration model
