@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome to Valtus
+GenericName=Welcome Application
+Comment=Introduction and quick access to Valtus essentials
+Exec=/usr/bin/valtus-welcome
+Icon=/usr/share/valtus/emblem.svg
+Terminal=false
+Categories=System;Documentation;
+NoDisplay=false

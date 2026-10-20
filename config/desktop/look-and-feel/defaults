@@ -1,0 +1,32 @@
+[KDE]
+widgetStyle=Breeze
+LookAndFeelPackage=org.valtus.desktop
+
+[kdeglobals][KDE]
+widgetStyle=Breeze
+
+[kdeglobals][General]
+ColorScheme=ValtusDark
+
+[kdeglobals][Icons]
+Theme=breeze
+
+[kdeglobals][Fonts]
+general=Noto Sans,10,-1,5,50,0,0,0,0,0
+fixed=Noto Sans Mono,10,-1,5,50,0,0,0,0,0
+menuFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+toolBarFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+smallestFontSize=8
+
+[kdeglobals][WM]
+activeFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+
+[plasmarc][Theme]
+name=default
+
+[Wallpaper]
+plugin=org.kde.image
+
+[Wallpaper][org.kde.image][General]
+Image=file:///usr/share/wallpapers/valtus/contents/images/3840x2160.png
+PreviewImage=file:///usr/share/wallpapers/valtus/contents/images/3840x2160.png

@@ -1,0 +1,15 @@
+# Valtus repository attributes
+# Force LF for everything that is consumed by bash inside WSL (CRLF breaks it)
+* text=auto
+*.sh text eol=lf
+*.conf text eol=lf
+*.colors text eol=lf
+*.desktop text eol=lf
+*.py text eol=lf
+*.txt text eol=lf
+*.env text eol=lf
+skel/** text eol=lf
+Makefile text eol=lf
+*.png binary
+*.svg text
+*.iso binary

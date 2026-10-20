@@ -1,0 +1,6 @@
+# Security hardening packages (see docs/ARCHITECTURE.md, security model)
+ufw
+apparmor
+libpam-pwquality
+unattended-upgrades
+auditd

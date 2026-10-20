@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Valtus simplified emblem — editable source (vector). Transparent background,
+     chevron only. Used for the welcome application and launcher icon. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="v" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6FA0CE"/>
+      <stop offset="1" stop-color="#3D6E9E"/>
+    </linearGradient>
+  </defs>
+  <path d="M24,34 L64,102 L104,34" fill="none" stroke="url(#v)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

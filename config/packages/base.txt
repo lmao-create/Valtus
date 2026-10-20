@@ -1,0 +1,22 @@
+# Core live system packages (installed into the rootfs chroot)
+# Base: Ubuntu 24.04 LTS (noble), amd64. Verified against noble at build time.
+linux-image-generic
+linux-firmware
+casper
+systemd
+systemd-sysv
+initramfs-tools
+network-manager
+dbus
+sudo
+locales
+console-setup
+tzdata
+nano
+openssh-client
+curl
+wget
+# UEFI boot support (used by the future installer milestone)
+grub2-common
+grub-efi-amd64-signed
+shim-signed

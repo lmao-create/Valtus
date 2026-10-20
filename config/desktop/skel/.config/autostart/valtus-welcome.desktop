@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome to Valtus
+Exec=/usr/bin/valtus-welcome
+Icon=/usr/share/valtus/emblem.svg
+Terminal=false
+X-KDE-autostart-phase=1
+OnlyShowIn=KDE;

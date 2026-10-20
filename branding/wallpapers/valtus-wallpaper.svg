@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Valtus default wallpaper — editable source (vector). Palette: graphite
+     slate + steel blue. Motif: layered chevron valley echoing the Valtus
+     emblem. Rendered to PNG by the build script (rsvg-convert). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E141F"/>
+      <stop offset="0.55" stop-color="#141C2B"/>
+      <stop offset="1" stop-color="#1B2536"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="1.05" r="0.85">
+      <stop offset="0" stop-color="#3D6E9E" stop-opacity="0.16"/>
+      <stop offset="0.55" stop-color="#3D6E9E" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#3D6E9E" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="chev" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4A7FB5"/>
+      <stop offset="1" stop-color="#33506E"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="3840" height="2160" fill="url(#bg)"/>
+  <rect width="3840" height="2160" fill="url(#glow)"/>
+
+  <!-- far ridge (lightest) -->
+  <path d="M0,1250 L1920,1980 L3840,1250 L3840,2160 L0,2160 Z" fill="#2A3B54" opacity="0.55"/>
+  <!-- mid ridge -->
+  <path d="M0,1520 L1920,2130 L3840,1520 L3840,2160 L0,2160 Z" fill="#223047" opacity="0.75"/>
+  <!-- near ridge (darkest) -->
+  <path d="M-100,1810 L1920,2160 L3940,1810 L3940,2160 L-100,2160 Z" fill="#141C2B" opacity="0.95"/>
+
+  <!-- horizon accent -->
+  <rect x="0" y="1188" width="3840" height="3" fill="#4A7FB5" opacity="0.16"/>
+
+  <!-- emblem echo: single restrained chevron stroke -->
+  <path d="M1060,1780 L1920,2115 L2780,1780" fill="none" stroke="url(#chev)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.28"/>
+  <circle cx="1920" cy="2115" r="7" fill="#4A7FB5" opacity="0.30"/>
+</svg>

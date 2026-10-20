@@ -1,0 +1,33 @@
+# --- Generated release artifacts (never commit ISOs) ------------------------
+releases/*.iso
+releases/*.iso.sha256
+releases/*.manifest.txt
+releases/*.build.log
+releases/known-good/
+
+# --- VM disks and QEMU state ------------------------------------------------
+*.qcow2
+*.raw
+*.img
+*.vhdx
+
+# --- Local overrides for sensitive values (env-file pattern) ----------------
+config/valtus.local.env
+
+# --- Build/test artifacts ----------------------------------------------------
+logs/*.log
+logs/*.manifest.txt
+logs/*.ppm
+logs/*.png
+logs/*.serial
+logs/vm-test-*/
+logs/os-release.built.txt
+logs/lsb-release.built.txt
+build/
+.valtus-vm-test-*/
+
+# --- OS / editor noise -------------------------------------------------------
+Thumbs.db
+Desktop.ini
+~$*
+*.tmp

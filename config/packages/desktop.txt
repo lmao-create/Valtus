@@ -1,0 +1,28 @@
+# KDE Plasma desktop set for Valtus (Ubuntu 24.04 noble, Plasma 6)
+# Coherent minimal set - one application per function (rationale in docs/ARCHITECTURE.md).
+kde-plasma-desktop
+plasma-nm
+plasma-pa
+plasma-workspace-wayland
+sddm
+sddm-theme-breeze
+dolphin
+konsole
+kate
+okular
+falkon
+vlc
+ark
+kde-spectacle
+systemsettings
+kinfocenter
+plasma-systemmonitor
+plasma-discover
+kcalc
+xdg-user-dirs
+xdg-desktop-portal-kde
+xwayland
+python3-pyqt6
+fonts-noto-core
+fonts-noto-ui-core
+fonts-noto-color-emoji
