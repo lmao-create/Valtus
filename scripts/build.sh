@@ -338,21 +338,24 @@ prereqs) prereqs; exit 0 ;;
 esac
 log_begin_msg "valtus: provisioning live session credentials" 2>/dev/null || \\
   echo "valtus: credentials" > /dev/kmsg
-if id "\$USERNAME" >/dev/null 2>&1; then
-  echo "$LIVE_USER:$LIVE_USER_PASSWORD" | chpasswd 2>/dev/null || \\
-    echo "valtus: chpasswd failed" > /dev/kmsg
+# In the initramfs phase the live root is mounted at /root — every path below
+# is under /root (writing to /etc/... here hit the initramfs's own /etc).
+mkdir -p /root/etc/sddm.conf.d 2>/dev/null || true
+if [ -x /root/usr/sbin/chpasswd ]; then
+  echo "$LIVE_USER:$LIVE_USER_PASSWORD" | chroot /root /usr/sbin/chpasswd 2>/dev/null || \\
+    echo "valtus: chpasswd (chroot) failed" > /dev/kmsg
 fi
-rm -f /etc/sudoers.d/casper 2>/dev/null || true
-cat > /etc/sddm.conf.d/zz-valtus-no-autologin.conf <<'EOF'
+rm -f /root/etc/sudoers.d/casper 2>/dev/null || true
+cat > /root/etc/sddm.conf.d/zz-valtus-no-autologin.conf <<'EOF'
 [Autologin]
 User=
 Session=
 EOF
-if [ -f /etc/sddm.conf ]; then
+if [ -f /root/etc/sddm.conf ]; then
   awk '/^\[Autologin\]/ { s = 1 }
        s && /^\[/ && !/^\[Autologin\]/ { s = 0 }
-       !s || (/^\[/ && !/^\[Autologin\]/)' /etc/sddm.conf > /etc/sddm.conf.new 2>/dev/null
-  [ -s /etc/sddm.conf.new ] && mv /etc/sddm.conf.new /etc/sddm.conf 2>/dev/null || rm -f /etc/sddm.conf.new 2>/dev/null
+       !s || (/^\[/ && !/^\[Autologin\]/)' /root/etc/sddm.conf > /root/etc/sddm.conf.new 2>/dev/null
+  [ -s /root/etc/sddm.conf.new ] && mv /root/etc/sddm.conf.new /root/etc/sddm.conf 2>/dev/null || rm -f /root/etc/sddm.conf.new 2>/dev/null
 fi
 log_end_msg 2>/dev/null || true
 exit 0
@@ -362,9 +365,7 @@ CREDEOF
     # 7) Authoritative live-credentials service (runs inside the live system
     #    before sddm). NOTE: systemd ConditionUser= evaluates FALSE in the
     #    live-boot namespace even though the casper-created user exists (it
-    #    silently skipped this unit), so the gating happens in the script:
-    #    /cow exists only in live sessions; the user check keeps installed
-    #    systems untouched.
+    #    silently skipped this unit), so the gating happens in the script.
     log "installing valtus-live-credentials systemd service"
     mkdir -p "$(dirname "$LIVE_CREDS")"
     cat > "$LIVE_CREDS" <<CREDEOF2
@@ -373,8 +374,12 @@ CREDEOF
 set -u
 USER_NAME="$LIVE_USER"
 log() { logger -t valtus-live-credentials "\$*" 2>/dev/null || echo "valtus: \$*" >&2; }
-if [ ! -d /cow ]; then
-  log "not a live session (no /cow); nothing to do"
+# Live-session gate: the live system's root IS casper's overlay union
+# (installed systems boot ext4). /cow exists only in the initramfs, NOT in
+# the running live system — that mistake skipped this unit in build #5.
+ROOT_FS=\$(findmnt -n -o FSTYPE / 2>/dev/null || echo unknown)
+if [ "\$ROOT_FS" != "overlay" ] && [ ! -d /cdrom ]; then
+  log "not a live session (root fs: \$ROOT_FS); nothing to do"
   exit 0
 fi
 if ! id "\$USER_NAME" >/dev/null 2>&1; then
