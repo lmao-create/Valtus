@@ -152,7 +152,7 @@ ensure_reader() {
 ensure_reader
 
 # --- boot evidence -----------------------------------------------------------
-if wait_pat "GRUB" 90; then
+if wait_pat "Booting .Valtus\|GNU GRUB\|GRUB " 90; then
   ok "bootloader (GRUB) menu visible on serial console"
   shot 01-grub
 else
@@ -177,8 +177,11 @@ shot 02-console-or-sddm
 # --- log in on the serial console --------------------------------------------
 sleep 5
 send "$LIVE_USER"
-sleep 3
-send "$LIVE_USER_PASSWORD"
+if wait_pat "[Pp]assword:" 30; then
+  send "$LIVE_USER_PASSWORD"
+else
+  send "$LIVE_USER_PASSWORD"   # fallback: send anyway after 30s
+fi
 if wait_pat "$LIVE_USER@$DISTRO_HOSTNAME" 120; then
   ok "serial console login succeeded ($LIVE_USER)"
 else

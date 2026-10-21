@@ -88,7 +88,7 @@ Result: `releases/valtus-0.1.0-amd64.iso` (+ `.sha256`, `.manifest.txt`,
 |---|---|
 | ISO | `releases/valtus-0.1.0-amd64.iso` |
 | Size | 2,067,904,512 bytes (~1.93 GiB) |
-| SHA-256 | `710a9f8ea9d24b47bf6c12f476739c80d01920ff9faab10ad27de3058b42976b` |
+| SHA-256 | `31fa9766336e7224c1f97638346c20541b7e9a31cbb62ded78ded4c41898c41d` |
 | Kernel | 6.8.0-147-generic (Ubuntu noble) |
 | Packages | 1538 |
 
