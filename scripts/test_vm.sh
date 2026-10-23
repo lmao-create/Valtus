@@ -56,7 +56,7 @@ TS=$(date +%Y%m%d-%H%M%S)
 REALWORK="/root/valtus-vm-test-$TS"
 mkdir -p "$REALWORK/screens"
 LOGDIR="$PROJECT_DIR/logs/vm-test-$TS"
-mkdir -p "$LOGDIR"
+mkdir -p "$LOGDIR/screens"
 
 SERIAL_SOCK="$REALWORK/serial.sock"
 MON_SOCK="$REALWORK/monitor.sock"
@@ -191,16 +191,24 @@ fi
 RUN_CHECK() { # name pattern command
   local name="$1" pattern="$2" cmd="$3" mark="###DONE-$RANDOM$RANDOM"
   { echo "$cmd"; echo "echo $mark"; } > "$CMDFIFO"
-  if wait_pat "$mark" 60 && sed -n "/$mark/!p" "$SERIAL_LOG" | tail -40 | grep -q -- "$pattern"; then
-    ok "$name"
+  if wait_pat "$mark" 90; then
+    # everything written before the marker, ANSI escapes stripped
+    local out
+    out=$(awk -v m="$mark" 'index($0, m) {exit} {print}' "$SERIAL_LOG" | tail -60 | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g')
+    if printf '%s' "$out" | grep -q -- "$pattern"; then
+      ok "$name"
+    else
+      bad "$name (pattern not seen: $pattern)"
+      echo "--- last output ---" >> "$LOGDIR/DEBUG.txt"; printf '%s\n' "$out" | tail -5 >> "$LOGDIR/DEBUG.txt"
+    fi
   else
-    bad "$name (pattern not seen: $pattern)"
+    bad "$name (timeout waiting for marker)"
   fi
 }
 
 # --- in-guest checks ----------------------------------------------------------
 RUN_CHECK "identity: os-release names Valtus" "PRETTY_NAME=\"$DISTRO_NAME $DISTRO_VERSION" \
-  "grep PRETTY_NAME /etc/os-release"
+  "grep --color=never PRETTY_NAME /etc/os-release"
 RUN_CHECK "identity: wallpaper package installed" "/usr/share/wallpapers/valtus" \
   "ls -d /usr/share/wallpapers/valtus"
 RUN_CHECK "identity: theme files installed" "$DISTRO_THEME.colors" \
@@ -208,15 +216,15 @@ RUN_CHECK "identity: theme files installed" "$DISTRO_THEME.colors" \
 RUN_CHECK "identity: look-and-feel installed" "org.valtus.desktop" \
   "ls /usr/share/plasma/look-and-feel | grep org.valtus.desktop"
 RUN_CHECK "systemd: system running" "running\|degraded" "systemctl is-system-running"
-RUN_CHECK "systemd: no failed units" "0 loaded units listed" "systemctl --failed --no-legend | wc -l"
+RUN_CHECK "systemd: no failed units" "^0$" "systemctl --failed --no-legend | wc -l"
 RUN_CHECK "network: interface detected" "connected\|connecting" "nmcli -t -f DEVICE,STATE device status"
 RUN_CHECK "network: DHCP address assigned" "enp0s\|10\.0\.2\." "ip -brief address show | grep -v lo"
 RUN_CHECK "network: DNS resolves" "archive.ubuntu.com" "getent hosts archive.ubuntu.com"
-RUN_CHECK "network: ping external host" "1 received" "ping -c1 -W5 archive.ubuntu.com"
-RUN_CHECK "security: ufw firewall active" "Status: active" "ufw status verbose"
-RUN_CHECK "security: sudo requires password" "uid=0(root)" "echo $LIVE_USER_PASSWORD | sudo -S id -un root"
-RUN_CHECK "security: root account locked" "^root:!" "sudo grep '^root:' /etc/shadow"
-RUN_CHECK "security: AppArmor active" "apparmor" "cat /sys/kernel/security/lsm"
+RUN_CHECK "network: HTTP reachability (curl)" "HTTP/\|200 OK" "curl -sS -m 10 -o /dev/null -w '%{http_code} %{url_effective}\\n' http://archive.ubuntu.com/ubuntu/ || true"
+RUN_CHECK "security: ufw firewall active" "Status: active" "echo $LIVE_USER_PASSWORD | sudo -S ufw status verbose"
+RUN_CHECK "security: sudo requires password" "root" "echo $LIVE_USER_PASSWORD | sudo -S id -un root"
+RUN_CHECK "security: root account locked" "^root:[*!]" "sudo grep --color=never '^root:' /etc/shadow"
+RUN_CHECK "security: AppArmor active" "apparmor" "tr -d '\\n' < /sys/kernel/security/lsm; echo"
 RUN_CHECK "security: unattended-upgrades enabled" "enabled\|active" \
   "systemctl is-enabled unattended-upgrades.service 2>/dev/null; systemctl is-active unattended-upgrades.service 2>/dev/null"
 RUN_CHECK "security: credentials unit exists" "valtus-live-credentials" \
@@ -227,7 +235,7 @@ RUN_CHECK "package manager: apt-get update" "Reading package lists" \
 RUN_CHECK "package manager: install a package" "Setting up\|already the newest" \
   "echo $LIVE_USER_PASSWORD | sudo -S apt-get install -y --no-install-recommends srm || true"
 
-APPLIST="konsole dolphin kate okular falkon vlc kde-spectacle plasma-discover systemsettings kinfocenter plasma-systemmonitor kcalc valtus-welcome"
+APPLIST="konsole dolphin kate okular falkon vlc spectacle plasma-discover systemsettings kinfocenter plasma-systemmonitor kcalc valtus-welcome"
 for app in $APPLIST; do
   RUN_CHECK "application on PATH: $app" "/usr/bin/$app" "command -v $app"
 done

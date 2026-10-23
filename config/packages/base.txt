@@ -16,6 +16,7 @@ nano
 openssh-client
 curl
 wget
+iputils-ping
 # UEFI boot support (used by the future installer milestone)
 grub2-common
 grub-efi-amd64-signed

@@ -441,6 +441,18 @@ EOF
     # Remove build-time policy-rc.d (must never ship in the image)
     rm -f "$ROOTFS/usr/sbin/policy-rc.d"
 
+    # 9) NetworkManager: manage all devices (desktop behaviour). The image
+    #    inherited netplan-convention 'unmanaged-devices=*,except:wifi...'
+    #    from network-manager's conf.d, which leaves Ethernet unmanaged when
+    #    no netplan YAML exists (VM test finding: enp0s2 unmanaged).
+    log "enabling NetworkManager for all devices"
+    rm -f "$ROOTFS/usr/lib/NetworkManager/conf.d/10-globally-managed-devices.conf"
+    mkdir -p "$ROOTFS/etc/NetworkManager/conf.d"
+    cat > "$ROOTFS/etc/NetworkManager/conf.d/10-valtus-defaults.conf" <<'NMEOF'
+[main]
+plugins=keyfile
+NMEOF
+
     mark 03
   else
     prepare_rootfs_from 03-customized.tar.zst
