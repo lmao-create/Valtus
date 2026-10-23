@@ -127,9 +127,10 @@ _Actual runs are recorded here; nothing is asserted without evidence._
 
 | Run | Date | Scope | Summary |
 |---|---|---|---|
-| Static smoke | 2026-10-19 | repository checks | 43/43 assertions passed |
+| Static smoke | 2026-10-19 | repository checks | 43/43 assertions passed (55 with overlay-layout checks) |
 | Build #1 | 2026-10-19 16:42 | full build | completed; found `/etc` world-writable defect (fixed build #2) |
-| Build #2 | 2026-10-19 17:42 | stages 3–5 rebuild | completed; found rootfs root dir 777/uid-1000 |
-| Build #3 | 2026-10-20 09:17 | stages 3–5 rebuild | completed; validation 11/11 |
-| VM test #1 | 2026-10-20 10:49 | boot | **FAIL: “/cow format specified as 'overlay' and no support found”** — root-caused to `BUILD_SYSTEM="Valtus"` in casper.conf (casper then passes an empty `MP_QUIET` to `modprobe -b overlay`). Proven with `modprobe "" -b overlay` → rc=1 vs `modprobe -q -b overlay` → rc=0 inside the initramfs shell. Fixed (BUILD_SYSTEM=Ubuntu + smoke regression check); build #4 running |
-| VM test #2 | pending | full boot + in-guest checks | after build #4 |
+| Build #2 | 2026-10-19 17:42 | stages 3–5 rebuild | completed; found rootfs root dir 777/uid-1000 (fixed build #3) |
+| Build #3–#4 | 2026-10-20 | stages 3–5 rebuilds | completed; VM test #1 **FAIL: “/cow format specified as 'overlay' and no support found”** — root-caused to `BUILD_SYSTEM="Valtus"` in casper.conf (casper then passes an empty `MP_QUIET` to `modprobe -b overlay`); fixed with BUILD_SYSTEM=Ubuntu + smoke guard |
+| VM test #2 | 2026-10-21 | full boot | credentials unit skipped (`ConditionUser` false in live namespace) → fixed (gate in script) |
+| VM test #3 | 2026-10-23 | full boot + login | **boot ✓, serial login with documented credential ✓, 29 passed / 12 failed** — the 12 failures: 10 harness pattern bugs ( ANSI escapes, marker-line exclusion, wrong patterns) + 2 real OS gaps (`ping` missing; Ethernet unmanaged by NM). Harness fixed, OS gaps fixed; verification run pending |
+| Screenshots | 2026-10-23 | GUI capture | SDDM login screen captured (Valtus wallpaper). Plasma session did not start in the test environment (greeter itself renders via software GL; KWin needs a GL context — headless QEMU has none). Build #8 adds the automated-test entry (autologin + `LIBGL_ALWAYS_SOFTWARE=1` via the Plasma env mechanism) for headless capture; VirtualBox with VBoxSVGA provides real GL |

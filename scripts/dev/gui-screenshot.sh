@@ -28,10 +28,10 @@ KPID=$!
 qemu-system-x86_64 \
   -enable-kvm -cpu host -smp 2 -m 2048 -machine q35 \
   -kernel "$R/boot/vmlinuz-$KVER" -initrd "$R/boot/initrd.img-$KVER" \
-  -append "boot=casper console=tty0 console=ttyS0,115200n8" \
+  -append "boot=casper console=tty0 console=ttyS0,115200n8 valtus.test_autologin=1" \
   -cdrom "$P/releases/${DISTRO_ID}-${DISTRO_VERSION}-${DISTRO_ARCH}.iso" -boot order=d \
   -nic user,model=virtio-net-pci \
-  -display none -device virtio-gpu-gl \
+  -display none -vga virtio \
   -monitor "unix:$MON_SOCK,server,nowait" \
   -serial "unix:$S_SOCK,server,nowait" \
   -no-reboot -pidfile "$W/qemu.pid" &
@@ -72,12 +72,9 @@ echo "== waiting for SDDM login screen =="
 if ! wait_pat "sddm\|login:" 240; then echo "FAIL: no login screen"; kill "$QPID" "$SPID" "$KPID" 2>/dev/null; exit 1; fi
 sleep 20   # let SDDM settle (themed background loaded)
 shot 01-valtus-login-screen
-echo "== typing documented credentials into SDDM =="
-# The greeter preselects the sole live user, so the password field has focus
-for ch in $(echo "$LIVE_USER_PASSWORD" | sed 's/./& /g'); do mon "sendkey $ch"; done
-sleep 1; mon "sendkey ret"
+echo "== logging in via the automated-test entry (autologin) =="
 echo "== waiting for Plasma session =="
-sleep 90
+sleep 120
 shot 02-valtus-desktop
 echo "== also capturing the desktop again after welcome app settles =="
 sleep 20
