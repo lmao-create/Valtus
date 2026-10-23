@@ -388,8 +388,27 @@ if ! id "\$USER_NAME" >/dev/null 2>&1; then
 fi
 log "provisioning live credentials for \$USER_NAME"
 echo "$LIVE_USER:$LIVE_USER_PASSWORD" | chpasswd || log "chpasswd failed"
+# Desktop group membership for DRM/GL devices
+usermod -aG video,render "\$USER_NAME" 2>/dev/null || true
 rm -f /etc/sudoers.d/casper
 mkdir -p /etc/sddm.conf.d
+
+# Automated-test boot (GRUB entry "live (automated test)"): keep casper
+# autologin so the VM harness can capture the desktop without typing, and
+# force software GL (headless QEMU hosts have no GL context; VirtualBox and
+# real hardware provide their own). Shipped images never take this branch.
+if grep -q "valtus.test_autologin=1" /proc/cmdline 2>/dev/null; then
+  log "test boot: autologin + software GL override"
+  mkdir -p "/home/\$USER_NAME/.config/plasma-workspace/env"
+  cat > "/home/\$USER_NAME/.config/plasma-workspace/env/99-valtus-test-gl.sh" <<'EOF'
+#!/bin/sh
+# Test-boot only: software GL for headless QEMU captures (no virgl on host).
+export LIBGL_ALWAYS_SOFTWARE=1
+EOF
+  chown -R "\$USER_NAME:\$USER_NAME" "/home/\$USER_NAME/.config" 2>/dev/null || true
+  exit 0
+fi
+
 cat > /etc/sddm.conf.d/zz-valtus-no-autologin.conf <<'EOF'
 [Autologin]
 User=
@@ -496,9 +515,14 @@ menuentry "Valtus - live session" {
     linux /casper/vmlinuz boot=casper fsck.mode=skip quiet splash console=tty0 console=ttyS0,115200n8 ---
     initrd /casper/initrd
 }
-menuentry "Valtus - live session (safe graphics)" {
+menuentry "Valtus — live session (safe graphics)" {
     set gfxpayload=keep
     linux /casper/vmlinuz boot=casper fsck.mode=skip nomodeset console=tty0 console=ttyS0,115200n8 ---
+    initrd /casper/initrd
+}
+menuentry "Valtus — live session (automated test)" {
+    set gfxpayload=keep
+    linux /casper/vmlinuz boot=casper fsck.mode=skip console=tty0 console=ttyS0,115200n8 valtus.test_autologin=1 ---
     initrd /casper/initrd
 }
 GRUBEOF

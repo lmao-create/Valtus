@@ -41,6 +41,19 @@ based on Keep a Changelog, and the project uses semantic versioning.
 - World-writable/uid-1000 system files (DrvFs artifact of building against
   the `/mnt/c` project drive): build now normalizes ownership and permissions
   for all Valtus-added paths and the rootfs root directory.
+- **Live credentials unit never applied** — `ConditionUser=valtus` evaluates
+  false in the live-boot namespace, so the documented password and the
+  no-autologin hardening were silently skipped (empty password + casper
+  autologin remained). The unit runs unconditionally and gates in-script on
+  the live session (root fs is the casper overlay union) plus user existence;
+  the initramfs hook now writes under `/root` (the mounted live root)
+  instead of the initramfs's own `/etc`.
+- **Ethernet unmanaged** — the image shipped netplan's
+  `10-globally-managed-devices.conf` (`unmanaged-devices=*` except wifi)
+  with no netplan YAML to override it, so NetworkManager left the network
+  interface unmanaged. The build removes that file (desktop behaviour: NM
+  manages all devices).
+- **`ping` missing** from the base image — added `iputils-ping`.
 - **Live-boot failure “/cow format specified as 'overlay' and no support
   found”** — `BUILD_SYSTEM` in `/etc/casper.conf` had been branded to
   "Valtus"; casper-helpers maps that to an empty `MP_QUIET`, making casper
