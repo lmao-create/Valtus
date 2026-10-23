@@ -460,6 +460,14 @@ EOF
     # Remove build-time policy-rc.d (must never ship in the image)
     rm -f "$ROOTFS/usr/sbin/policy-rc.d"
 
+    # 10) Image hygiene: never ship apt lists or package caches in the ISO
+    #     (they add ~70 MB and are host-state, not distro content; this also
+    #     guards against incremental chroot work repopulating them).
+    log "cleaning apt lists and caches"
+    rm -rf "$ROOTFS/var/lib/apt/lists"/*
+    rm -f "$ROOTFS/var/cache/apt"/*.bin
+    rm -rf "$ROOTFS/var/cache/apt/archives"/*
+
     # 9) NetworkManager: manage all devices (desktop behaviour). The image
     #    inherited netplan-convention 'unmanaged-devices=*,except:wifi...'
     #    from network-manager's conf.d, which leaves Ethernet unmanaged when
