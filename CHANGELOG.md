@@ -100,3 +100,10 @@ based on Keep a Changelog, and the project uses semantic versioning.
 - `iputils-ping`, NetworkManager managing all devices, live-user video/render
   group membership.
 - ISO size policy raised to 6 GiB (antivirus engine adds ~2 GB installed).
+
+### Test results
+
+- **VM test: 39 passed / 0 failed / 0 blocked** (`docs/TESTING.md`) — boot,
+  serial login, identity/branding, systemd, network (interface, DHCP, DNS,
+  HTTP 200, apt update/install), security (fw, sudo, root lock, AppArmor,
+  unattended-upgrades), all 13 default applications, desktop components.
