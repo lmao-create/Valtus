@@ -18,6 +18,13 @@ original visual identity, and a security-first design.
 > [docs/TESTING.md](docs/TESTING.md) for what has been tested and what has
 > not.
 
+**Included in this build:** KDE Plasma 6 desktop, Valtus theme + wallpaper +
+welcome app, system hardening (locked root, ufw, AppArmor, unattended-upgrades,
+sysctl hardening), NetworkManager, and **Valtus Security** — the built-in
+ClamAV antivirus and system-protection centre (on-demand scanning, protected
+quarantine, signature updates, firewall/update status; runs unprivileged with
+a polkit helper). See [docs/ANTIVIRUS-INTEGRATION.md](docs/ANTIVIRUS-INTEGRATION.md).
+
 ## Documentation
 
 | Document | Contents |
@@ -87,10 +94,10 @@ Result: `releases/valtus-0.1.0-amd64.iso` (+ `.sha256`, `.manifest.txt`,
 | | |
 |---|---|
 | ISO | `releases/valtus-0.1.0-amd64.iso` |
-| Size | 2,067,904,512 bytes (~1.93 GiB) |
-| SHA-256 | `31fa9766336e7224c1f97638346c20541b7e9a31cbb62ded78ded4c41898c41d` |
+| Size | 2,113,798,144 bytes (~1.97 GiB) |
+| SHA-256 | `dd986696aaf87c9bc90212224ba3d507be54edb5bd84a9cd4eaf2564f5a41608` |
 | Kernel | 6.8.0-147-generic (Ubuntu noble) |
-| Packages | 1538 |
+| Packages | 1538 + Valtus Security |
 
 (Checksums and exact values are also in the release `.manifest.txt`.)
 
