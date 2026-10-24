@@ -196,10 +196,10 @@ RUN_CHECK() { # name pattern command
   # Generous timeout: apt operations can block the shell for minutes.
   if wait_pat "$mark" 180; then
     sleep 3   # let the command's output flush into the log
-    # Search the whole log (escapes stripped) - robust against windowing when
-    # several commands queue behind a slow one.
+    # Search the whole log (escapes stripped) - early checks would otherwise
+    # fall outside a tail window.
     local out
-    out=$(sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g' "$SERIAL_LOG" | tail -400)
+    out=$(sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g' "$SERIAL_LOG")
     if printf '%s' "$out" | grep -q -- "$pattern"; then
       ok "$name"
     else
