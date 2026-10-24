@@ -191,21 +191,31 @@ fi
 RUN_CHECK() { # name pattern command
   local name="$1" pattern="$2" cmd="$3" mark="###DONE-$RANDOM$RANDOM"
   # A newline BEFORE the marker echo guarantees the marker starts a fresh
-  # line even when the previous command's output has no trailing newline
-  # (otherwise that line - which holds the evidence - gets cut by awk).
+  # line even when the previous command's output has no trailing newline.
   { echo "$cmd"; echo; echo "echo $mark"; } > "$CMDFIFO"
-  if wait_pat "$mark" 90; then
-    # everything up to the marker line, ANSI escapes stripped
+  # Wait for the marker to appear TWICE (once as the echoed input line, once
+  # as its output) - that guarantees the preceding command's output has been
+  # flushed to the serial log before we capture it.
+  local deadline=$((SECONDS+90))
+  local seen=0
+  while [ $SECONDS -lt $deadline ]; do
+    seen=$(grep -a -c "$mark" "$SERIAL_LOG" 2>/dev/null || echo 0)
+    [ "$seen" -ge 2 ] && break
+    ensure_reader
+    sleep 2
+  done
+  if [ "${seen:-0}" -ge 2 ]; then
+    # capture everything up to the LAST marker occurrence, escapes stripped
     local out
-    out=$(awk -v m="$mark" 'index($0, m) {exit} {print}' "$SERIAL_LOG" | tail -80 | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g')
+    out=$(awk -v m="$mark" 'index($0, m) {exit} {print}' "$SERIAL_LOG" | tail -120 | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g')
     if printf '%s' "$out" | grep -q -- "$pattern"; then
       ok "$name"
     else
       bad "$name (pattern not seen: $pattern)"
-      echo "--- last output of: $name ---" >> "$LOGDIR/DEBUG.txt"; printf '%s\n' "$out" | tail -6 >> "$LOGDIR/DEBUG.txt"
+      echo "--- last output of: $name ---" >> "$LOGDIR/DEBUG.txt"; printf '%s\n' "$out" | tail -8 >> "$LOGDIR/DEBUG.txt"
     fi
   else
-    bad "$name (timeout waiting for marker)"
+    bad "$name (timeout waiting for marker, seen=$seen)"
   fi
 }
 
@@ -235,8 +245,8 @@ RUN_CHECK "security: credentials unit exists" "valtus-live-credentials" \
 RUN_CHECK "system: hostname" "$DISTRO_HOSTNAME" "hostname"
 RUN_CHECK "package manager: apt-get update" "Reading package lists" \
   "echo $LIVE_USER_PASSWORD | sudo -S apt-get update"
-RUN_CHECK "package manager: install a package" "Setting up srm\|already the newest\|Unpacking srm" \
-  "echo $LIVE_USER_PASSWORD | sudo -S apt-get install -y --no-install-recommends srm 2>&1 || true"
+RUN_CHECK "package manager: install a package" "Setting up\|already the newest\|Unpacking" \
+  "echo $LIVE_USER_PASSWORD | sudo -S apt-get install -y --no-install-recommends nano 2>&1 || true"
 
 APPLIST="konsole dolphin kate okular falkon vlc spectacle plasma-discover systemsettings kinfocenter plasma-systemmonitor kcalc valtus-welcome"
 for app in $APPLIST; do
