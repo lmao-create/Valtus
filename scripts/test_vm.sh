@@ -193,11 +193,13 @@ RUN_CHECK() { # name pattern command
   # Blank line before the marker echo keeps the marker on its own line even
   # when the previous output had no trailing newline.
   { echo "$cmd"; echo; echo "echo $mark"; } > "$CMDFIFO"
-  if wait_pat "$mark" 90; then
-    sleep 2   # let the command's output flush into the log
-    # everything up to the marker line, escapes stripped
+  # Generous timeout: apt operations can block the shell for minutes.
+  if wait_pat "$mark" 180; then
+    sleep 3   # let the command's output flush into the log
+    # Search the whole log (escapes stripped) - robust against windowing when
+    # several commands queue behind a slow one.
     local out
-    out=$(awk -v m="$mark" 'index($0, m) {exit} {print}' "$SERIAL_LOG" | tail -120 | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g')
+    out=$(sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g' "$SERIAL_LOG" | tail -400)
     if printf '%s' "$out" | grep -q -- "$pattern"; then
       ok "$name"
     else
