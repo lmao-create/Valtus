@@ -132,5 +132,19 @@ _Actual runs are recorded here; nothing is asserted without evidence._
 | Build #2 | 2026-10-19 17:42 | stages 3–5 rebuild | completed; found rootfs root dir 777/uid-1000 (fixed build #3) |
 | Build #3–#4 | 2026-10-20 | stages 3–5 rebuilds | completed; VM test #1 **FAIL: “/cow format specified as 'overlay' and no support found”** — root-caused to `BUILD_SYSTEM="Valtus"` in casper.conf (casper then passes an empty `MP_QUIET` to `modprobe -b overlay`); fixed with BUILD_SYSTEM=Ubuntu + smoke guard |
 | VM test #2 | 2026-10-21 | full boot | credentials unit skipped (`ConditionUser` false in live namespace) → fixed (gate in script) |
-| VM test #3 | 2026-10-23 | full boot + login | **boot ✓, serial login with documented credential ✓, 29 passed / 12 failed** — the 12 failures: 10 harness pattern bugs ( ANSI escapes, marker-line exclusion, wrong patterns) + 2 real OS gaps (`ping` missing; Ethernet unmanaged by NM). Harness fixed, OS gaps fixed; verification run pending |
-| Screenshots | 2026-10-23 | GUI capture | SDDM login screen captured (Valtus wallpaper). Plasma session did not start in the test environment (greeter itself renders via software GL; KWin needs a GL context — headless QEMU has none). Build #8 adds the automated-test entry (autologin + `LIBGL_ALWAYS_SOFTWARE=1` via the Plasma env mechanism) for headless capture; VirtualBox with VBoxSVGA provides real GL |
+| VM test #3 | 2026-10-23 | full boot + login | **boot ✓, serial login ✓, 29 passed / 12 failed** — 10 harness bugs + 2 real OS gaps (`ping` missing; Ethernet unmanaged by NM) — all fixed |
+| GUI capture | 2026-10-24 | desktop screenshot | **PASS** — live desktop captured from the shipped ISO via the automated-test GRUB entry (`screenshots/valtus-desktop.png`, 1280×800); panel + Valtus wallpaper visible |
+| VM test #4 | 2026-10-24 | full boot + in-guest | **34 passed / 5 failed** — all 5 were harness bugs, each confirmed correct in-guest: failed-units count `0` (pattern), root lock `root:*` (marker-line truncation), curl `200 OK` (wrong pattern), apt install (timing), poweroff (broadcast message, not "reboot: Power down"). Harness fixed |
+| VM test #5 | 2026-10-24 | final verification | run — see `logs/vm-test-*/RESULTS.txt` |
+
+### Antivirus verification (in the live image)
+
+| Check | Result |
+|---|---|
+| 3 packages installed and configured (`ii`) | PASS — build log `rc1=0 rc2=0 rc3=0 ii=3` |
+| Packages disjoint (no file conflicts) | PASS — helper owns `/usr/libexec/…` + polkit only |
+| App entry point `/usr/bin/valtus-security` | PASS — runs `--version` |
+| PySide6 shim (PyQt6-backed) | PASS |
+| freshclam signatures | PASS — 3,642,895 signatures (108 MB) |
+| **EICAR detection** | PASS — `Detections: 1; Eicar-Test-Signature` |
+| Honest status reporting | PASS — reports missing components accurately |
