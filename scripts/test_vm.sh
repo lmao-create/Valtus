@@ -190,22 +190,12 @@ fi
 
 RUN_CHECK() { # name pattern command
   local name="$1" pattern="$2" cmd="$3" mark="###DONE-$RANDOM$RANDOM"
-  # A newline BEFORE the marker echo guarantees the marker starts a fresh
-  # line even when the previous command's output has no trailing newline.
+  # Blank line before the marker echo keeps the marker on its own line even
+  # when the previous output had no trailing newline.
   { echo "$cmd"; echo; echo "echo $mark"; } > "$CMDFIFO"
-  # Wait for the marker to appear TWICE (once as the echoed input line, once
-  # as its output) - that guarantees the preceding command's output has been
-  # flushed to the serial log before we capture it.
-  local deadline=$((SECONDS+90))
-  local seen=0
-  while [ $SECONDS -lt $deadline ]; do
-    seen=$(grep -a -c "$mark" "$SERIAL_LOG" 2>/dev/null || echo 0)
-    [ "$seen" -ge 2 ] && break
-    ensure_reader
-    sleep 2
-  done
-  if [ "${seen:-0}" -ge 2 ]; then
-    # capture everything up to the LAST marker occurrence, escapes stripped
+  if wait_pat "$mark" 90; then
+    sleep 2   # let the command's output flush into the log
+    # everything up to the marker line, escapes stripped
     local out
     out=$(awk -v m="$mark" 'index($0, m) {exit} {print}' "$SERIAL_LOG" | tail -120 | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g')
     if printf '%s' "$out" | grep -q -- "$pattern"; then
@@ -215,7 +205,7 @@ RUN_CHECK() { # name pattern command
       echo "--- last output of: $name ---" >> "$LOGDIR/DEBUG.txt"; printf '%s\n' "$out" | tail -8 >> "$LOGDIR/DEBUG.txt"
     fi
   else
-    bad "$name (timeout waiting for marker, seen=$seen)"
+    bad "$name (timeout waiting for marker)"
   fi
 }
 
