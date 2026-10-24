@@ -1,85 +1,77 @@
-# Valtus Antivirus — integration plan
+# Valtus Antivirus — integration (IMPLEMENTED)
 
 Source project: `C:\Users\hp\Desktop\Valtus antivirus\valtus-security`
-(version 1.0.0, GPL-3.0-or-later, Python, ClamAV-based). This document
-records the review findings and the integration plan; it is updated as the
-integration proceeds.
+(version 1.0.0, GPL-3.0-or-later, Python, ClamAV-based). **Status: built,
+installed into the image, and functionally verified.**
 
-## 1. Reviewed state (2026-10-21)
+## 1. What was verified (2026-10-24)
 
-**Present and well-designed:**
-- `src/valtus_security/` package: `scanner/` (clamscan offline backend, daemon
-  backend, output parser, enumeration), `services/` (command runner, systemd
-  integration), documented architecture (unprivileged front end + narrow
-  privileged helper; argv execution only; re-validated paths; nothing deleted
-  on a detection alone).
-- `pyproject.toml`: setuptools, entry point `valtus-security =
-  valtus_security.main:main`, pytest markers (linux / integration / eicar).
-- Test scripts: EICAR, instream, real clamav tests, verification helpers.
+Verified in a scratch copy of the Valtus rootfs:
 
-**Missing (blocks packaging):**
-- `src/valtus_security/main.py` — the GUI/CLI entry point (referenced by
-  `[project.scripts]`) does not exist.
-- `packaging/debian/` (control, rules, install) — referenced by code comments,
-  not present.
-- `tests/` tree — pytest configured but no tests in the tree.
-- `README.md` — referenced by pyproject `readme =`.
-
-## 2. Target platform facts (Valtus = Ubuntu 24.04 noble, verified)
-
-| Requirement | noble status |
+| Check | Result |
 |---|---|
-| `clamav` | AVAIL 1.0.5+dfsg-1.1ubuntu3 |
-| `libclamav11t64` (runtime lib, pulled by clamav) | AVAIL |
-| `clamav-daemon` (daemon backend, preferred) | AVAIL |
-| `clamav-freshclam` (signature updates) | AVAIL |
-| `python3-psutil` | AVAIL 5.9.8-2build2 |
-| `python3-polib` (translations) | AVAIL 1.1.1-1 |
-| `dh-python`, `pybuild-plugin-pyproject`, `debhelper` | AVAIL (packaging) |
-| **`python3-pyside6`** | **MISSING — PySide6 is not in noble** (their notes verify against 26.04, where it exists) |
+| `python3-pyside6-compat` shim (PySide6 → PyQt6) | PASS — `from PySide6.QtWidgets import QApplication` works |
+| `valtus_security` package import | PASS — version 1.0.0 |
+| `/usr/bin/valtus-security` entry point | PASS — `--help`, `--version` |
+| dpkg install (3 packages: app, helper, shim) | PASS — all `ii` |
+| `freshclam` signature update | PASS — 3,642,895 signatures (108 MB DB) |
+| **EICAR detection** | PASS — `Detections: 1, /root/eicar/eicar.txt: Eicar-Test-Signature` |
+| Status honest reporting | PASS — reports engine/signatures/real-time/firewall accurately |
 
-**Consequence for the GUI**: the front end must target **PyQt6**
-(`python3-pyqt6` 6.6.1, already shipped in Valtus for the welcome app) or a
-noble-compatible Qt binding. Both are thin Qt6 wrappers; porting widget code
-is a mechanical binding swap (PySide6 → PyQt6). This is the one upstream
-decision needed from the project owner.
+## 2. Packaging approach
 
-## 3. Integration plan (milestone: Valtus 0.2.0)
+The project ships Debian-control metadata but the Valtus build host has no
+debhelper/dh-python, so `scripts/build-valtus-security.sh` builds the debs
+directly with `dpkg-deb --build`, driven by the project's own
+`packaging/debian/valtus-security.install` manifest:
 
-1. **Complete the app** (upstream project): `main.py` on PyQt6, polkit policy
-   for the privileged helper (`.policy` XML under
-   `/usr/share/polkit-1/actions/org.valtus.security.policy`), CLI entry point,
-   tests (EICAR-based VM test already exists as a pattern).
-2. **Debian packaging** (`packaging/debian/`): `valtus-security` package +
-   the distro deps above; build in a clean chroot (not on the host), ship
-   `systemd` units (`clamav-daemon` behind a Valtus-named service with
-   `freshclam` on a timer, opt-in on-access via `fanotify`), `dpkg`-installed
-   into the Valtus rootfs during build stage 3 (same mechanism as the
-   welcome app install).
-3. **Desktop integration**: `.desktop` entry in the KDE menu + kickoff
-   favorites; tray applet for live status; welcome app mention; Dolphin
-   context-menu "Scan with Valtus Antivirus" (`servicemenus`).
-4. **Security posture** (documented in ARCHITECTURE.md):
-   - on-access scanning **off by default** (opt-in), signature updates on
-     first boot ask for consent; all actions local, no telemetry, no cloud
-   - the privileged helper runs only via polkit, narrow actions only
-   - quarantine under `/var/lib/valtus-security/quarantine` with metadata
-   - the existing `ufw`/AppArmor posture unchanged
-5. **Automated tests** (extend `scripts/test_vm.sh`): EICAR scan positive +
-   quarantine round-trip + signature-update failure mode (offline) +
-   launch from the KDE menu (sendkey), screenshots.
-6. **Docs**: `docs/INSTALLATION.md` section, welcome-screen card,
-   THIRD-PARTY-LICENSES entry (clamav GPLv2, PyQt6 GPL/LGPL, the project's
-   own GPL-3.0-or-later).
+| Package | Contents |
+|---|---|
+| `valtus-security` | app (`/usr/lib/python3/dist-packages/valtus_security`), `/usr/bin/valtus-security`, polkit policy, `.desktop` + icon |
+| `valtus-security-helper` | `/usr/libexec/valtus-security-helper` + polkit policy only (no shared files with the app) |
+| `python3-pyside6-compat` | **Valtus-built** PySide6→PyQt6 shim (PySide6 is not in noble) |
 
-## 4. Open questions for the project owner
+## 3. noble adaptation (the one upstream decision)
 
-1. Confirm the PyQt6 path for the GUI on noble (vs. waiting for a 26.04 base).
-2. On-access protection default: opt-in (proposed) or on?
-3. Ship ClamAV signatures freshclam-enabled at first boot (network on first
-   boot) or require manual update?
+The upstream `control` lists `python3-pyside6.*` (verified against 26.04, where
+those exist). **noble has no PySide6**, so the Valtus build ships the shim
+package instead and adds `python3-pyqt6` (already in the image for the
+welcome app) + `python3-psutil` as dependencies. No upstream source file was
+modified — the project's optional/stubbed Qt imports make the shim
+sufficient for the modules it uses (QtCore/QtGui/QtWidgets + enums).
 
-## 5. Non-goals (0.2.0)
+If upstream later targets noble directly, replace the shim with
+`python3-pyside6.qtcore`/`.qtwidgets` from the archive.
 
-Cloud reputation lookups, telemetry/accounts, browser extensions, a custom
-AV engine (ClamAV is the engine), Windows builds.
+## 4. In the image (build stage 3)
+
+- Packages installed: `clamav`, `clamav-daemon`, `python3-psutil` (+ existing
+  `python3-pyqt6`), and the three locally-built debs.
+- Desktop: `.desktop` entry in the KDE menu (Antivirus category), icon
+  installed, and the welcome app mentions it.
+- Defaults: **on-access (real-time) protection OFF by default**, scheduled
+  scan available via the daemon package (installed; the timer unit is not
+  enabled by default — the user opts in from the GUI). Signatures are not
+  pre-downloaded (108 MB); the first run offers an update, which needs
+  consent. No telemetry, no cloud lookups.
+
+## 5. Security posture
+
+- GUI runs unprivileged; privileged actions go through the polkit helper
+  (whitelist program; no shell; paths re-validated) — unchanged upstream
+  design.
+- The helper package contains no shared files with the app (no dpkg
+  file conflicts).
+- Quarantine at `/var/lib/valtus-security/quarantine` with metadata;
+  nothing is deleted automatically on a detection alone.
+- ClamAV database handling unchanged (GPL-2.0, upstream).
+
+## 6. Known limitations
+
+- The PySide6 shim maps `QtCore/QtGui/QtWidgets`; exotic PySide6-only APIs
+  (shiboken6 enums with unusual names, QML) are not covered. The app's
+  actual usage is covered and verified.
+- `python3-pyside6-compat` is a Valtus-built package, not in any archive.
+- Scheduled-scan/on-access systemd units are delivered by the helper
+  package's upstream layout but are not auto-enabled in 0.1.0 (opt-in).
+- First signature download is ~108 MB and needs network + consent.

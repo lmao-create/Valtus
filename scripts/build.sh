@@ -460,6 +460,38 @@ EOF
     # Remove build-time policy-rc.d (must never ship in the image)
     rm -f "$ROOTFS/usr/sbin/policy-rc.d"
 
+    # 9b) Valtus Security (antivirus): build the project's debs and install
+    #      them into the image. The project lives outside this repository
+    #      (config: VALTUS_AV_SRC); the builder produces the three debs with
+    #      dpkg-deb (no debhelper on the build host) per the project's own
+    #      install manifest. See docs/ANTIVIRUS-INTEGRATION.md.
+    if [ -n "${VALTUS_AV_SRC:-}" ] && [ -d "${VALTUS_AV_SRC:-}" ]; then
+      log "building Valtus Security debs from $VALTUS_AV_SRC"
+      AV_OUT="$BUILD_DIR/av"
+      VALTUS_AV_SRC="$VALTUS_AV_SRC" VALTUS_AV_OUT="$AV_OUT" \
+        bash "$PROJECT_DIR/scripts/build-valtus-security.sh" \
+        || die "valtus-security build failed"
+      if ls "$AV_OUT"/repo/*.deb >/dev/null 2>&1; then
+        mkdir -p "$ROOTFS/valtus-av-packages"
+        cp "$AV_OUT"/repo/*.deb "$ROOTFS/valtus-av-packages/"
+        # Install with absolute paths (run_chroot has no cwd) and let apt
+        # resolve the runtime deps it declared (pyqt6, psutil, clamav...).
+        run_chroot bash -c '
+          cd /valtus-av-packages
+          dpkg -i python3-pyside6-compat_*_all.deb valtus-security_*_all.deb \
+                    valtus-security-helper_*_all.deb 2>&1 | tail -3
+          apt-get install -y -f -qq 2>&1 | tail -2
+          dpkg --configure -a 2>&1 | tail -2
+        ' || die "valtus-security install into image failed"
+        rm -rf "$ROOTFS/valtus-av-packages"
+        log "Valtus Security installed into the image"
+      else
+        die "no valtus-security debs were produced"
+      fi
+    else
+      log "note: VALTUS_AV_SRC not set - building without the antivirus (set it to enable)"
+    fi
+
     # 10) Image hygiene: never ship apt lists or package caches in the ISO
     #     (they add ~70 MB and are host-state, not distro content; this also
     #     guards against incremental chroot work repopulating them).

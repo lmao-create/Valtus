@@ -4,3 +4,6 @@ apparmor
 libpam-pwquality
 unattended-upgrades
 auditd
+# Antivirus engine (Valtus Security front end; see docs/ANTIVIRUS-INTEGRATION.md)
+clamav
+clamav-daemon

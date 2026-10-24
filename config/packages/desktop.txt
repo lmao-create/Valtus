@@ -23,6 +23,7 @@ xdg-user-dirs
 xdg-desktop-portal-kde
 xwayland
 python3-pyqt6
+python3-psutil
 fonts-noto-core
 fonts-noto-ui-core
 fonts-noto-color-emoji
