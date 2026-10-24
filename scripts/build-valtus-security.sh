@@ -64,8 +64,9 @@ echo "built: python3-pyside6-compat"
 # --- helper: stage the project per the install manifest ---------------------
 stage_files() { # $1=dest root
   local D="$1"
+  # NOTE: no /usr/libexec or polkit dirs here - the helper package owns those
+  # paths; keeping the staging trees disjoint avoids dpkg file conflicts.
   mkdir -p "$D/usr/lib/python3/dist-packages" "$D/usr/bin" \
-           "$D/usr/libexec" "$D/usr/share/polkit-1/actions" \
            "$D/usr/share/applications" "$D/usr/share/icons/hicolor/scalable/apps" \
            "$D/usr/share/icons/hicolor/128x128/apps" \
            "$D/DEBIAN"
@@ -73,10 +74,17 @@ stage_files() { # $1=dest root
   # drop caches from the source tree
   find "$D/usr/lib/python3/dist-packages/valtus_security" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
   install -m 0755 "$AV/scripts/valtus-security" "$D/usr/bin/valtus-security"
-  install -m 0755 "$AV/helper/valtus-security-helper.py" "$D/usr/libexec/valtus-security-helper"
-  install -m 0644 "$AV/polkit/org.valtus.security.policy" "$D/usr/share/polkit-1/actions/"
+  # NOTE: the privileged helper binary and the polkit policy ship ONLY in
+  # valtus-security-helper (per the project's debian/control). Copying them
+  # here too would make the packages conflict over those paths.
   install -m 0644 "$AV/packaging/valtus-security.desktop" "$D/usr/share/applications/"
   install -m 0644 "$AV/packaging/valtus-security.svg" "$D/usr/share/icons/hicolor/scalable/apps/"
+  # PNG icon: the project ships only the SVG; render one for the hicolor
+  # 128x128 slot (rsvg-convert is a build-host dependency).
+  if command -v rsvg-convert >/dev/null 2>&1; then
+    rsvg-convert -w 128 -h 128 "$AV/packaging/valtus-security.svg" \
+      -o "$D/usr/share/icons/hicolor/128x128/apps/valtus-security.png" 2>/dev/null || true
+  fi
 }
 # The helper package ships ONLY the helper binary + polkit policy (per the
 # project's debian/control); the full application lives in valtus-security.

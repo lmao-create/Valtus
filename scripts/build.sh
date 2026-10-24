@@ -476,13 +476,26 @@ EOF
         cp "$AV_OUT"/repo/*.deb "$ROOTFS/valtus-av-packages/"
         # Install with absolute paths (run_chroot has no cwd) and let apt
         # resolve the runtime deps it declared (pyqt6, psutil, clamav...).
+        # NOTE: pipe `tail` must not mask failures -> use a status file.
         run_chroot bash -c '
           cd /valtus-av-packages
           dpkg -i python3-pyside6-compat_*_all.deb valtus-security_*_all.deb \
-                    valtus-security-helper_*_all.deb 2>&1 | tail -3
-          apt-get install -y -f -qq 2>&1 | tail -2
-          dpkg --configure -a 2>&1 | tail -2
+                    valtus-security-helper_*_all.deb > /tmp/av-dpkg.log 2>&1
+          rc1=$?
+          apt-get install -y -f -qq >> /tmp/av-dpkg.log 2>&1
+          rc2=$?
+          dpkg --configure -a >> /tmp/av-dpkg.log 2>&1
+          rc3=$?
+          dpkg -l valtus-security valtus-security-helper python3-pyside6-compat \
+            | grep -c "^ii" > /tmp/av-ok.count
+          echo "rc1=$rc1 rc2=$rc2 rc3=$rc3 ii=$(cat /tmp/av-ok.count)"
+          tail -3 /tmp/av-dpkg.log
         ' || die "valtus-security install into image failed"
+        # Verify all three packages reached configured state (ii)
+        if [ "$(run_chroot bash -c 'dpkg -l valtus-security valtus-security-helper python3-pyside6-compat | grep -c "^ii"')" != "3" ]; then
+          run_chroot bash -c 'dpkg -l valtus-security valtus-security-helper python3-pyside6-compat | tail -4; tail -6 /tmp/av-dpkg.log'
+          die "valtus-security packages did not reach configured state in the image"
+        fi
         rm -rf "$ROOTFS/valtus-av-packages"
         log "Valtus Security installed into the image"
       else
