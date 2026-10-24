@@ -1,22 +1,21 @@
 # Valtus Antivirus — integration (IMPLEMENTED)
 
 Source project: `C:\Users\hp\Desktop\Valtus antivirus\valtus-security`
-(version 1.0.0, GPL-3.0-or-later, Python, ClamAV-based). **Status: built,
-installed into the image, and functionally verified.**
+(version 1.0.0, GPL-3.0-or-later, Python, ClamAV-based). **Status: built into
+the released ISO, installed, and functionally verified.**
 
 ## 1. What was verified (2026-10-24)
-
-Verified in a scratch copy of the Valtus rootfs:
 
 | Check | Result |
 |---|---|
 | `python3-pyside6-compat` shim (PySide6 → PyQt6) | PASS — `from PySide6.QtWidgets import QApplication` works |
 | `valtus_security` package import | PASS — version 1.0.0 |
 | `/usr/bin/valtus-security` entry point | PASS — `--help`, `--version` |
-| dpkg install (3 packages: app, helper, shim) | PASS — all `ii` |
+| dpkg install (3 packages: app, helper, shim) | PASS — all three `ii` in a clean-room rootfs |
 | `freshclam` signature update | PASS — 3,642,895 signatures (108 MB DB) |
 | **EICAR detection** | PASS — `Detections: 1, /root/eicar/eicar.txt: Eicar-Test-Signature` |
 | Status honest reporting | PASS — reports engine/signatures/real-time/firewall accurately |
+| In-image install (build stage 3) | PASS — build log `rc1=0 rc2=0 rc3=0 ii=3`, files present, no fatal |
 
 ## 2. Packaging approach
 
@@ -27,8 +26,8 @@ directly with `dpkg-deb --build`, driven by the project's own
 
 | Package | Contents |
 |---|---|
-| `valtus-security` | app (`/usr/lib/python3/dist-packages/valtus_security`), `/usr/bin/valtus-security`, polkit policy, `.desktop` + icon |
-| `valtus-security-helper` | `/usr/libexec/valtus-security-helper` + polkit policy only (no shared files with the app) |
+| `valtus-security` | app (`/usr/lib/python3/dist-packages/valtus_security`), `/usr/bin/valtus-security`, `.desktop` + SVG/PNG icon |
+| `valtus-security-helper` | `/usr/libexec/valtus-security-helper` + polkit policy — the *only* owner of those paths (the app package deliberately does not ship them, so the two install without dpkg file conflicts) |
 | `python3-pyside6-compat` | **Valtus-built** PySide6→PyQt6 shim (PySide6 is not in noble) |
 
 ## 3. noble adaptation (the one upstream decision)
