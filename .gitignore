@@ -26,7 +26,21 @@ logs/lsb-release.built.txt
 build/
 .valtus-vm-test-*/
 
-# --- OS / editor noise -------------------------------------------------------
+# --- Antivirus build outputs (built by scripts/build-valtus-security.sh) ----
+# The debs and staging trees are generated; the source project lives outside
+# this repository. Keep the build script and docs, never the artifacts.
+*.deb
+av-build/
+
+# --- Scratch rootfs copies used by dev verification scripts -----------------
+# (e.g. /root/valtus-av-test, /root/valtus-av-clean inside WSL; the rules are
+# here in case such directories are ever created inside the workspace)
+valtus-av-*/
+
+# --- Python / editor noise ---------------------------------------------------
+__pycache__/
+*.pyc
+.pytest_cache/
 Thumbs.db
 Desktop.ini
 ~$*
