@@ -135,7 +135,7 @@ _Actual runs are recorded here; nothing is asserted without evidence._
 | VM test #3 | 2026-10-23 | full boot + login | **boot ✓, serial login ✓, 29 passed / 12 failed** — 10 harness bugs + 2 real OS gaps (`ping` missing; Ethernet unmanaged by NM) — all fixed |
 | GUI capture | 2026-10-24 | desktop screenshot | **PASS** — live desktop captured from the shipped ISO via the automated-test GRUB entry (`screenshots/valtus-desktop.png`, 1280×800); panel + Valtus wallpaper visible |
 | VM test #4 | 2026-10-24 | full boot + in-guest | **34 passed / 5 failed** — all 5 were harness bugs, each confirmed correct in-guest: failed-units count `0` (pattern), root lock `root:*` (marker-line truncation), curl `200 OK` (wrong pattern), apt install (timing), poweroff (broadcast message, not "reboot: Power down"). Harness fixed |
-| VM test #5 | 2026-10-24 | final verification | run — see `logs/vm-test-*/RESULTS.txt` |
+| VM test #5 | 2026-10-24 | final verification | **37 passed / 2 failed** — both remaining failures were harness windowing artifacts (`tail -400` excluded early checks); the in-guest evidence (`0` failed units, `200 OK` from curl) was confirmed present in the serial log. Final run with whole-log search: see `logs/vm-test-*/RESULTS.txt` |
 
 ### Antivirus verification (in the live image)
 
