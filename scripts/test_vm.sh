@@ -190,16 +190,19 @@ fi
 
 RUN_CHECK() { # name pattern command
   local name="$1" pattern="$2" cmd="$3" mark="###DONE-$RANDOM$RANDOM"
-  { echo "$cmd"; echo "echo $mark"; } > "$CMDFIFO"
+  # A newline BEFORE the marker echo guarantees the marker starts a fresh
+  # line even when the previous command's output has no trailing newline
+  # (otherwise that line - which holds the evidence - gets cut by awk).
+  { echo "$cmd"; echo; echo "echo $mark"; } > "$CMDFIFO"
   if wait_pat "$mark" 90; then
-    # everything written before the marker, ANSI escapes stripped
+    # everything up to the marker line, ANSI escapes stripped
     local out
-    out=$(awk -v m="$mark" 'index($0, m) {exit} {print}' "$SERIAL_LOG" | tail -60 | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g')
+    out=$(awk -v m="$mark" 'index($0, m) {exit} {print}' "$SERIAL_LOG" | tail -80 | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g')
     if printf '%s' "$out" | grep -q -- "$pattern"; then
       ok "$name"
     else
       bad "$name (pattern not seen: $pattern)"
-      echo "--- last output ---" >> "$LOGDIR/DEBUG.txt"; printf '%s\n' "$out" | tail -5 >> "$LOGDIR/DEBUG.txt"
+      echo "--- last output of: $name ---" >> "$LOGDIR/DEBUG.txt"; printf '%s\n' "$out" | tail -6 >> "$LOGDIR/DEBUG.txt"
     fi
   else
     bad "$name (timeout waiting for marker)"
@@ -220,7 +223,7 @@ RUN_CHECK "systemd: no failed units" "^0$" "systemctl --failed --no-legend | wc 
 RUN_CHECK "network: interface detected" "connected\|connecting" "nmcli -t -f DEVICE,STATE device status"
 RUN_CHECK "network: DHCP address assigned" "enp0s\|10\.0\.2\." "ip -brief address show | grep -v lo"
 RUN_CHECK "network: DNS resolves" "archive.ubuntu.com" "getent hosts archive.ubuntu.com"
-RUN_CHECK "network: HTTP reachability (curl)" "HTTP/\|200 OK" "curl -sS -m 10 -o /dev/null -w '%{http_code} %{url_effective}\\n' http://archive.ubuntu.com/ubuntu/ || true"
+RUN_CHECK "network: HTTP reachability (curl)" "^200 " "curl -sS -m 10 -o /dev/null -w '%{http_code} %{url_effective}\\n' http://archive.ubuntu.com/ubuntu/ || true"
 RUN_CHECK "security: ufw firewall active" "Status: active" "echo $LIVE_USER_PASSWORD | sudo -S ufw status verbose"
 RUN_CHECK "security: sudo requires password" "root" "echo $LIVE_USER_PASSWORD | sudo -S id -un root"
 RUN_CHECK "security: root account locked" "^root:[*!]" "sudo grep --color=never '^root:' /etc/shadow"
@@ -232,8 +235,8 @@ RUN_CHECK "security: credentials unit exists" "valtus-live-credentials" \
 RUN_CHECK "system: hostname" "$DISTRO_HOSTNAME" "hostname"
 RUN_CHECK "package manager: apt-get update" "Reading package lists" \
   "echo $LIVE_USER_PASSWORD | sudo -S apt-get update"
-RUN_CHECK "package manager: install a package" "Setting up\|already the newest" \
-  "echo $LIVE_USER_PASSWORD | sudo -S apt-get install -y --no-install-recommends srm || true"
+RUN_CHECK "package manager: install a package" "Setting up srm\|already the newest\|Unpacking srm" \
+  "echo $LIVE_USER_PASSWORD | sudo -S apt-get install -y --no-install-recommends srm 2>&1 || true"
 
 APPLIST="konsole dolphin kate okular falkon vlc spectacle plasma-discover systemsettings kinfocenter plasma-systemmonitor kcalc valtus-welcome"
 for app in $APPLIST; do
@@ -271,8 +274,8 @@ fi
 # --- shutdown -------------------------------------------------------------------
 shot 04-final
 echo "echo $LIVE_USER_PASSWORD | sudo -S systemctl poweroff" > "$CMDFIFO"
-if wait_pat "reboot: Power down\|Power down" 120; then
-  ok "guest shut down cleanly"
+if wait_pat "reboot: Power down\|Power down\|The system will power off now" 120; then
+  ok "guest initiated clean shutdown"
 else
   if [ -f "$REALWORK/qemu.pid" ]; then
     i=0
