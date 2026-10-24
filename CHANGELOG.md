@@ -82,3 +82,21 @@ based on Keep a Changelog, and the project uses semantic versioning.
 
 - Installer milestone (calamares-based, Valtus-branded) and installation
   tests to a disposable disk.
+
+### Added (post-0.1.0, in progress)
+
+- **Valtus Security antivirus integrated** — the completed upstream project
+  (`valtus-security` 1.0.0, ClamAV-based, GPL-3.0-or-later) is built into
+  three debs by `scripts/build-valtus-security.sh` (dpkg-deb; the build host
+  has no debhelper) and installed in build stage 3. Verified in a scratch
+  rootfs: packages install, 3.6M signatures download, **EICAR detected**,
+  status reports accurately. See docs/ANTIVIRUS-INTEGRATION.md.
+- **GUI capture evidence** — the live desktop renders (KDE Plasma, Valtus
+  wallpaper/panel) captured from the shipped ISO via the automated-test GRUB
+  entry; screenshots in `screenshots/`.
+- Plasma headless-capture path: the automated-test GRUB entry
+  (`valtus.test_autologin=1`) keeps autologin and sets
+  `LIBGL_ALWAYS_SOFTWARE=1` via Plasma's env mechanism for hosts without GL.
+- `iputils-ping`, NetworkManager managing all devices, live-user video/render
+  group membership.
+- ISO size policy raised to 6 GiB (antivirus engine adds ~2 GB installed).
