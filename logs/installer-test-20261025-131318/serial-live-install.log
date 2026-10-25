@@ -1,0 +1,85 @@
+[22;1H   The highlighted entry will be executed automatically in 1s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 0s.                 [5;78H[?25h[H[J[1;1H[H[J[1;1H  Booting `Valtus 0.1.0 - live session'
+
+ln: /root/usr/lib/update-notifier/apt-check: No such file or directory
+ln: /root/usr/lib/ubuntu-release-upgrader/check-new-release: No such file or directory
+ln: /root/usr/lib/ubuntu-release-upgrader/check-new-release-gtk: No such file or directory
+
+Valtus 0.1.0 'granite' valtus ttyS0
+
+valtus login: valtus
+Password: 
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+Valtus 0.1.0 'granite'
+
+Welcome. This system is based on Ubuntu 24.04 LTS. Valtus is an independent
+distribution; it is not affiliated with or endorsed by Canonical Ltd. or the
+KDE community. Ubuntu and related marks are trademarks of Canonical Ltd.
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+[?2004hvaltus@valtus:~$ echo V4ltus-Test-Pass! | sudo -S whoami >/dev/null && echo SUDO-OK
+[?2004l[sudo] password for valtus: test -x /usr/bin/valtus-install && echo VALINST-OK
+Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ test -x /usr/bin/valtus-install && echo VALINST-OK
+[?2004lVALINST-OK
+[?2004hvaltus@valtus:~$ ls /usr/share/calamares/branding/valtus/branding.desc >/dev/null 2>&1 && echo BRAND-OK
+[?2004lBRAND-OK
+[?2004hvaltus@valtus:~$ calamares --version
+[?2004lqt.qpa.xcb: could not connect to display 
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+Available platform plugins are: eglfs, linuxfb, minimal, minimalegl, offscreen, vnc, wayland-egl, wayland, wayland-xcomposite-egl, wayland-xcomposite-glx, xcb.
+
+Aborted (core dumped)
+[?2004hvaltus@valtus:~$ mkdir -p /home/valtus/.calamares-test
+[?2004l[?2004hvaltus@valtus:~$ echo V4ltus-Test-Pass! | sudo -S tee /home/valtus/.calamares-test/unattended.conf > /dev/null << 'CFGEOF'
+[?2004l[?2004h> user: valtustest
+[?2004l[?2004h> userFullname: Valtus Test
+[?2004l[?2004h> userPassword: $6$f0SXTrd32QlkCTFb$67FwIOQ3T2U4LdJZ5VdeajF2vN1ofq6.yCz/NoWKW5myjkLyEz7knzNOr2CASSg1zivg1mlMsNeI2pkhD89FN/
+[?2004l[?2004h> userGroups: sudo,adm,cdrom,dip,plugdev,lpadmin,sambashare
+[?2004l[?2004h> hostname: valtustest
+[?2004l[?2004h> CFGEOF
+[?2004l[sudo] password for valtus: Sorry, try again.
+[sudo] password for valtus: Sorry, try again.
+[sudo] password for valtus: echo V4ltus-Test-Pass! | sudo -S cp /etc/calamares/modules-unattended.conf /home/valtus/.calamares-test/modules-unattended.conf
+sudo: 3 incorrect password attempts
+[?2004hvaltus@valtus:~$ echo V4ltus-Test-Pass! | sudo -S cp /etc/calamares/modules-unattended.conf /home/valtus/.calamares-test/modules-unattended.conf
+[?2004l[sudo] password for valtus: echo V4ltus-Test-Pass! | sudo -S cp /etc/calamares/settings.conf /home/valtus/.calamares-test/settings.conf
+Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ echo V4ltus-Test-Pass! | sudo -S cp /etc/calamares/settings.conf /home/valtus/.calamares-test/settings.conf
+[?2004l[sudo] password for valtus: echo V4ltus-Test-Pass! | sudo -S sed -i 's/^  unattended: false/  unattended: true/' /home/valtus/.calamares-test/settings.conf
+Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ echo V4ltus-Test-Pass! | sudo -S sed -i 's/^  unattended: false/  unattended: true/' /home/valtus/.calamares-test/settings.conf
+[?2004l[sudo] password for valtus: grep unattended /home/valtus/.calamares-test/settings.conf | head -2
+Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ grep unattended /home/valtus/.calamares-test/settings.conf | head -2
+[?2004lgrep: /home/valtus/.calamares-test/settings.conf: No such file or directory
+[?2004hvaltus@valtus:~$ calamares -c /home/valtus/.calamares-test -b valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=$?
+[?2004lAborted (core dumped)
+INSTALL-RC=134
+[?2004hvaltus@valtus:~$ echo V4ltus-Test-Pass! | sudo -S systemctl poweroff
+[?2004l[sudo] password for valtus: Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ 

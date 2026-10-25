@@ -119,9 +119,19 @@ HASH=$(mkpasswd -5 "$USER_PASS" 2>/dev/null || openssl passwd -6 "$USER_PASS")
 if [ -z "$HASH" ]; then echo "FAIL: could not hash the test password"; kill $QPID $SPID $KPID 2>/dev/null; exit 1; fi
 
 # Write the unattended config into the live session (runtime-only).
+# NOTE: sudo -S reads the password from stdin, so the password must be the
+# FIRST thing in the pipeline: `echo PASS | sudo -S tee FILE`, never
+# `printf ... | sudo -S tee FILE`.
 send "mkdir -p /home/$LIVE_USER/.calamares-test"
-send "printf 'user: %s\nuserFullname: Valtus Test\nuserPassword: %s\nuserGroups: sudo,adm,cdrom,dip,plugdev,lpadmin,sambashare\nhostname: %s\n' '$USER_NAME' '$HASH' '$USER_NAME' | sudo -S tee /home/$LIVE_USER/.calamares-test/unattended.conf > /dev/null"
-send "sudo -S cp /etc/calamares/modules-unattended.conf /home/$LIVE_USER/.calamares-test/modules-unattended.conf"
+send "echo $USER_PASS | sudo -S tee /home/$LIVE_USER/.calamares-test/unattended.conf > /dev/null << 'CFGEOF'
+user: $USER_NAME
+userFullname: Valtus Test
+userPassword: $HASH
+userGroups: sudo,adm,cdrom,dip,plugdev,lpadmin,sambashare
+hostname: $USER_NAME
+CFGEOF"
+sleep 3
+send "echo $USER_PASS | sudo -S cp /etc/calamares/modules-unattended.conf /home/$LIVE_USER/.calamares-test/modules-unattended.conf"
 send "echo $USER_PASS | sudo -S cp /etc/calamares/settings.conf /home/$LIVE_USER/.calamares-test/settings.conf"
 send "echo $USER_PASS | sudo -S sed -i 's/^  unattended: false/  unattended: true/' /home/$LIVE_USER/.calamares-test/settings.conf"
 send "grep unattended /home/$LIVE_USER/.calamares-test/settings.conf | head -2"
@@ -137,15 +147,18 @@ send "echo $USER_PASS | sudo -S systemctl poweroff"
 wait_pat "Power down\|power off" 180
 sleep 5
 kill $QPID $SPID $KPID 2>/dev/null
-# wait for the pidfile lock to actually be released
-for i in $(seq 1 10); do
-  [ -f "$W/qemu.pid" ] && rm -f "$W/qemu.pid" 2>/dev/null
-  kill -0 "$QPID" 2>/dev/null || break
-  sleep 2
+# Stop QEMU fully and wait for the qcow2 write lock to be released.
+for i in $(seq 1 15); do
+  kill -9 "$QPID" 2>/dev/null || true
+  if command -v fuser >/dev/null 2>&1 && fuser "$W/disk.qcow2" 2>/dev/null; then
+    sleep 2
+  else
+    break
+  fi
 done
 kill -9 "$QPID" 2>/dev/null || true
 rm -f "$W/qemu.pid" 2>/dev/null || true
-sleep 2
+sleep 3
 
 echo "== booting from the installed disk (ISO detached) =="
 # Keep the first boot's evidence: archive it, then start a fresh log.
