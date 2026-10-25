@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Install Valtus
+GenericName=System Installer
+Comment=Install Valtus to this computer's disk
+Exec=/usr/bin/valtus-install
+Icon=/usr/share/calamares/branding/valtus/valtus-logo.png
+Terminal=false
+Categories=System;
+NoDisplay=true
+X-KDE-autostart-phase=0

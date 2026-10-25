@@ -17,7 +17,12 @@ openssh-client
 curl
 wget
 iputils-ping
-# UEFI boot support (used by the future installer milestone)
+# UEFI boot support + system installer (valtus-installer)
 grub2-common
 grub-efi-amd64-signed
 shim-signed
+# Installer (Calamares 3.3) and runtime deps
+calamares
+os-prober
+libkpmcore12
+util-linux-extra

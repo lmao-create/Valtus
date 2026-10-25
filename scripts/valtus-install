@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# =============================================================================
+# valtus-install — Valtus installer launcher
+# =============================================================================
+# Starts the Valtus installer (Calamares) with the Valtus branding. Run from
+# the live session (or an existing installation to re-install).
+#
+#   * Configuration comes from /etc/calamares (branding/valtus + settings.conf)
+#   * The installer requires no credentials: privileged actions are performed
+#     through the Calamares polkit helper (org.calamares.calamares.policy).
+#   * No password is stored or defaulted; the users module asks the operator
+#     for the primary account credentials.
+#
+# Usage: valtus-install [--debug]   (--debug adds -d to the Calamares command)
+# =============================================================================
+set -euo pipefail
+
+CALAMARES_SETTINGS="/etc/calamares"
+
+if ! command -v calamares >/dev/null 2>&1; then
+  echo "valtus-install: Calamares is not installed on this system." >&2
+  exit 1
+fi
+
+if [ ! -f "$CALAMARES_SETTINGS/settings.conf" ]; then
+  echo "valtus-install: $CALAMARES_SETTINGS/settings.conf is missing." >&2
+  exit 1
+fi
+
+# Refuse to run as root: the installer uses polkit for privileged actions and
+# must run as an ordinary desktop user.
+if [ "$(id -u)" -eq 0 ]; then
+  echo "valtus-install: do not run as root; run as your normal user." >&2
+  exit 1
+fi
+
+# Debug mode for testing (adds Calamares debug output and dumps the log).
+DEBUG_ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    -d|--debug) DEBUG_ARGS+=(-d) ;;
+    *) echo "valtus-install: unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
+
+echo "Starting the Valtus installer..."
+exec calamares -c "$CALAMARES_SETTINGS" -b valtus "${DEBUG_ARGS[@]}" "$@"

@@ -505,6 +505,34 @@ EOF
       log "note: VALTUS_AV_SRC not set - building without the antivirus (set it to enable)"
     fi
 
+    # 9c) Installer (Calamares) branding + configuration + launcher
+    if [ -d "$ROOTFS/usr/bin/calamares" ] || [ -d "$PROJECT_DIR/config/installer" ]; then
+      log "installing Valtus installer branding and configuration"
+      CBR="/usr/share/calamares/branding/valtus"
+      mkdir -p "$ROOTFS$CBR"
+      # branding text + style
+      install -m 0644 "$PROJECT_DIR/config/installer/branding.desc" "$ROOTFS$CBR/"
+      install -m 0644 "$PROJECT_DIR/config/installer/valtus.css" "$ROOTFS$CBR/"
+      # logo + sidebar (render from the SVG sources)
+      rsvg-convert -w 256 -h 256 "$PROJECT_DIR/$DISTRO_LOGO_SVG" \
+        -o "$ROOTFS$CBR/valtus-logo.png" 2>/dev/null || true
+      rsvg-convert -w 420 -h 840 "$PROJECT_DIR/$DISTRO_WALLPAPER_SVG" \
+        -o "$ROOTFS$CBR/valtus-sidebar.png" 2>/dev/null || true
+      # settings
+      mkdir -p "$ROOTFS/etc/calamares"
+      install -m 0644 "$PROJECT_DIR/config/installer/settings.conf" \
+        "$ROOTFS/etc/calamares/"
+      # module configuration overrides
+      for f in "$PROJECT_DIR/config/installer/modules/"*.conf; do
+        [ -f "$f" ] && install -m 0644 "$f" "$ROOTFS/etc/calamares/modules-$(basename "$f")"
+      done
+      # launcher + desktop entry (so the installer can be started from the menu)
+      install -m 0755 "$PROJECT_DIR/scripts/valtus-install" "$ROOTFS/usr/bin/valtus-install"
+      install -m 0644 "$PROJECT_DIR/config/installer/valtus-installer.desktop" \
+        "$ROOTFS/usr/share/applications/"
+      log "Valtus installer installed"
+    fi
+
     # 10) Image hygiene: never ship apt lists or package caches in the ISO
     #     (they add ~70 MB and are host-state, not distro content; this also
     #     guards against incremental chroot work repopulating them).

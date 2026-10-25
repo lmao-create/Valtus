@@ -1,0 +1,31 @@
+# Valtus installer branding (Calamares)
+## The strings in this file are the branding strings for the Valtus installer.
+windowTitle: "Install Valtus"
+productName:  "Valtus"
+subtitle:    "0.1.0 'granite'"
+version:     "0.1.0 (granite)"
+shortVersion: "0.1.0"
+versionedName: "Valtus 0.1.0 (granite)"
+title:       "Welcome to Valtus"
+shortProductName: "Valtus"
+homepage:    "https://valtus.invalid/"
+productUrl:  "https://valtus.invalid/"
+supportUrl:  "https://valtus.invalid/support"
+knownIssuesUrl: "https://valtus.invalid/issues"
+releaseNotesUrl: "https://valtus.invalid/notes"
+donateUrl: ""
+helpUrl: ""
+helpIcon: "distributor-logo"
+# Word used in the installer for the bootloader product name.
+bootloaderEntryName: "Valtus"
+# Sidebar / slide image (leave a KDE wallpaper file)
+sidebar: "valtus-sidebar.svg"
+# Slide show images
+slideshow: "valtus-slideshow.qml"
+slideshowAPI: 2
+# Show the sidebar title as a logo + name
+logo: "valtus-logo.png"
+# Window icon (used on some platforms)
+windowIcon: "valtus-logo.png"
+# Color scheme: light background, dark text
+style: "valtus.css"
