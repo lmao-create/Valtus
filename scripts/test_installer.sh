@@ -54,9 +54,13 @@ sleep infinity > "$FIFO" &
 KPID=$!
 
 rm -f "$W/serial.sock" "$W/monitor.sock"
-run_qemu -cdrom "$ISO" -boot order=d -drive "file=$W/disk.qcow2,format=qcow2,if=virtio,media=disk" &
+run_qemu -cdrom "$ISO" -boot order=d -drive "file=$W/disk.qcow2,format=qcow2,if=virtio,media=disk" > "$W/qemu.stderr" 2>&1 &
 QPID=$!
-sleep 3
+sleep 5
+if ! kill -0 "$QPID" 2>/dev/null; then
+  echo "FAIL: QEMU exited immediately:"; cat "$W/qemu.stderr"; kill $KPID 2>/dev/null; exit 1
+fi
+echo "== qemu up (pid $QPID), waiting for the live session =="
 socat - "UNIX-CONNECT:$W/serial.sock" < "$FIFO" >> "$W/serial.log" 2>/dev/null &
 SPID=$!
 
@@ -116,14 +120,25 @@ send "echo $USER_PASS | sudo -S systemctl poweroff"
 wait_pat "Power down\|power off" 180
 sleep 5
 kill $QPID $SPID $KPID 2>/dev/null
+# wait for the pidfile lock to actually be released
+for i in $(seq 1 10); do
+  [ -f "$W/qemu.pid" ] && rm -f "$W/qemu.pid" 2>/dev/null
+  kill -0 "$QPID" 2>/dev/null || break
+  sleep 2
+done
+kill -9 "$QPID" 2>/dev/null || true
+rm -f "$W/qemu.pid" 2>/dev/null || true
 sleep 2
 
 echo "== booting from the installed disk (ISO detached) =="
 : > "$W/serial.log"
-rm -f "$W/serial.sock" "$W/monitor.sock"
-run_qemu -boot order=c -drive "file=$W/disk.qcow2,format=qcow2,if=virtio,media=disk" &
+rm -f "$W/serial.sock" "$W/monitor.sock" "$W/qemu.pid"   # stale pidfile is still locked
+run_qemu -boot order=c -drive "file=$W/disk.qcow2,format=qcow2,if=virtio,media=disk" >> "$W/qemu.stderr" 2>&1 &
 QPID=$!
-sleep 3
+sleep 5
+if ! kill -0 "$QPID" 2>/dev/null; then
+  echo "FAIL: QEMU (installed boot) exited:"; cat "$W/qemu.stderr"; exit 1
+fi
 socat - "UNIX-CONNECT:$W/serial.sock" < "$FIFO" >> "$W/serial.log" 2>/dev/null &
 SPID=$!
 shot 03-installed-boot
