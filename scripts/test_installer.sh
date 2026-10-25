@@ -109,10 +109,27 @@ send "calamares --version"
 wait_pat "VALINST-OK" 60
 wait_pat "BRAND-OK" 60
 
-echo "== running the installer (this takes several minutes) =="
+echo "== running the installer unattended (as the ordinary user) =="
 shot 02-installer
-# The installer runs as the live user and uses polkit for privilege.
-send "echo $USER_PASS | sudo -S valtus-install > /tmp/inst.log 2>&1; echo INSTALL-RC=\$?"
+# Calamares unattended mode: no GUI prompts, no sudo (privileged actions use
+# the Calamares polkit helper). Credentials are generated here and never
+# committed to the repository.
+echo "  user: $USER_NAME"
+HASH=$(mkpasswd -5 "$USER_PASS" 2>/dev/null || openssl passwd -6 "$USER_PASS")
+if [ -z "$HASH" ]; then echo "FAIL: could not hash the test password"; kill $QPID $SPID $KPID 2>/dev/null; exit 1; fi
+
+# Write the unattended config into the live session (runtime-only).
+send "mkdir -p /home/$LIVE_USER/.calamares-test"
+send "printf 'user: %s\nuserFullname: Valtus Test\nuserPassword: %s\nuserGroups: sudo,adm,cdrom,dip,plugdev,lpadmin,sambashare\nhostname: %s\n' '$USER_NAME' '$HASH' '$USER_NAME' | sudo -S tee /home/$LIVE_USER/.calamares-test/unattended.conf > /dev/null"
+send "sudo -S cp /etc/calamares/modules-unattended.conf /home/$LIVE_USER/.calamares-test/modules-unattended.conf"
+send "echo $USER_PASS | sudo -S cp /etc/calamares/settings.conf /home/$LIVE_USER/.calamares-test/settings.conf"
+send "echo $USER_PASS | sudo -S sed -i 's/^  unattended: false/  unattended: true/' /home/$LIVE_USER/.calamares-test/settings.conf"
+send "grep unattended /home/$LIVE_USER/.calamares-test/settings.conf | head -2"
+sleep 3
+wait_pat "unattended: true" 60 && echo "PASS: unattended config written"
+
+# Run the installer as the live user (no sudo).
+send "calamares -c /home/$LIVE_USER/.calamares-test -b valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=\$?"
 wait_pat "INSTALL-RC" 900 || { echo "FAIL: installer did not finish"; tail -30 "$W/serial.log"; kill $QPID $SPID $KPID 2>/dev/null; exit 1; }
 
 echo "== installer finished; powering off the live system =="
@@ -131,6 +148,8 @@ rm -f "$W/qemu.pid" 2>/dev/null || true
 sleep 2
 
 echo "== booting from the installed disk (ISO detached) =="
+# Keep the first boot's evidence: archive it, then start a fresh log.
+cp "$W/serial.log" "$LOG/serial-live-install.log" 2>/dev/null || true
 : > "$W/serial.log"
 rm -f "$W/serial.sock" "$W/monitor.sock" "$W/qemu.pid"   # stale pidfile is still locked
 run_qemu -boot order=c -drive "file=$W/disk.qcow2,format=qcow2,if=virtio,media=disk" >> "$W/qemu.stderr" 2>&1 &
