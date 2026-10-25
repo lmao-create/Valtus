@@ -53,14 +53,21 @@ mkfifo "$FIFO"
 sleep infinity > "$FIFO" &
 KPID=$!
 
-rm -f "$W/serial.sock" "$W/monitor.sock"
+rm -f "$W/serial.sock" "$W/monitor.sock" "$W/qemu.pid"
 run_qemu -cdrom "$ISO" -boot order=d -drive "file=$W/disk.qcow2,format=qcow2,if=virtio,media=disk" > "$W/qemu.stderr" 2>&1 &
-QPID=$!
-sleep 5
-if ! kill -0 "$QPID" 2>/dev/null; then
+sleep 3
+# $! is the subshell running the run_qemu function; QEMU's real PID is in the
+# pidfile. Kill the real PID, otherwise the orphaned QEMU keeps the disk lock.
+QREAL=""
+for i in $(seq 1 10); do
+  [ -s "$W/qemu.pid" ] && QREAL=$(cat "$W/qemu.pid") && break
+  sleep 1
+done
+if [ -z "$QREAL" ] || ! kill -0 "$QREAL" 2>/dev/null; then
   echo "FAIL: QEMU exited immediately:"; cat "$W/qemu.stderr"; kill $KPID 2>/dev/null; exit 1
 fi
-echo "== qemu up (pid $QPID), waiting for the live session =="
+echo "== qemu up (pid $QREAL), waiting for the live session =="
+QPID="$QREAL"
 socat - "UNIX-CONNECT:$W/serial.sock" < "$FIFO" >> "$W/serial.log" 2>/dev/null &
 SPID=$!
 
@@ -164,13 +171,18 @@ echo "== booting from the installed disk (ISO detached) =="
 # Keep the first boot's evidence: archive it, then start a fresh log.
 cp "$W/serial.log" "$LOG/serial-live-install.log" 2>/dev/null || true
 : > "$W/serial.log"
-rm -f "$W/serial.sock" "$W/monitor.sock" "$W/qemu.pid"   # stale pidfile is still locked
+rm -f "$W/serial.sock" "$W/monitor.sock" "$W/qemu.pid"
 run_qemu -boot order=c -drive "file=$W/disk.qcow2,format=qcow2,if=virtio,media=disk" >> "$W/qemu.stderr" 2>&1 &
-QPID=$!
-sleep 5
-if ! kill -0 "$QPID" 2>/dev/null; then
+sleep 3
+QREAL=""
+for i in $(seq 1 10); do
+  [ -s "$W/qemu.pid" ] && QREAL=$(cat "$W/qemu.pid") && break
+  sleep 1
+done
+if [ -z "$QREAL" ] || ! kill -0 "$QREAL" 2>/dev/null; then
   echo "FAIL: QEMU (installed boot) exited:"; cat "$W/qemu.stderr"; exit 1
 fi
+QPID="$QREAL"
 socat - "UNIX-CONNECT:$W/serial.sock" < "$FIFO" >> "$W/serial.log" 2>/dev/null &
 SPID=$!
 shot 03-installed-boot
