@@ -142,23 +142,28 @@ userPassword: $HASH
 userGroups: sudo,adm,cdrom,dip,plugdev,lpadmin,sambashare
 hostname: $USER_NAME
 EOF
-# Expose it to the guest over the serial console as base64 (avoids all shell
-# quoting/history issues with special characters in the password hash).
+# Write the base64 to a user-writable path first, then copy it into place with
+# sudo (a `>` redirect is evaluated by the unprivileged shell and hits
+# "Permission denied" on /etc).
 B64=$(base64 -w0 "$W/unattended.conf" 2>/dev/null || base64 "$W/unattended.conf" | tr -d '\n')
-send "echo $USER_PASS | sudo -S base64 -d > /etc/calamares/modules-unattended.conf << 'B64EOF'"
-send "$B64"
-send "B64EOF"
+send "echo $B64 | base64 -d > /home/$LIVE_USER/.calamares-test/u.b64"
 sleep 3
+send "echo $USER_PASS | sudo -S cp /home/$LIVE_USER/.calamares-test/u.b64 /etc/calamares/modules-unattended.conf"
+sleep 6
+send "echo $USER_PASS | sudo -S chown root:root /etc/calamares/modules-unattended.conf"
+sleep 6
 send "echo $USER_PASS | sudo -S sed -i 's/^\( *\)unattended: false/\1unattended: true/' /etc/calamares/settings.conf"
-send "grep -n unattended /etc/calamares/settings.conf | head -2"
-sleep 3
+sleep 6
+send "grep -n 'unattended: ' /etc/calamares/settings.conf | head -2"
+sleep 5
 wait_pat "unattended: true" 60 && echo "PASS: unattended config written"
 
 # Run the installer as the live user (no sudo).
 # Run the installer as the live user, with Valtus branding (stock settings).
 # QT_QPA_PLATFORM=offscreen: the serial console has no X display, and
 # unattended mode needs no GUI. This is the documented headless path.
-send "QT_QPA_PLATFORM=offscreen calamares -b valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=\$?"
+# NOTE: in this calamares build the branding flag is -d (not -b).
+send "QT_QPA_PLATFORM=offscreen calamares -d valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=\$?"
 wait_pat "INSTALL-RC" 900 || { echo "FAIL: installer did not finish"; tail -30 "$W/serial.log"; kill $QPID $SPID $KPID 2>/dev/null; exit 1; }
 # Capture the installer's own log — a core dump here needs its stderr.
 send "echo ===INSTLOG===; head -60 /tmp/inst.log"

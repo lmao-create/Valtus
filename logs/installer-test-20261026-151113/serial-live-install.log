@@ -1,0 +1,66 @@
+[22;1H   The highlighted entry will be executed automatically in 4s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 3s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 2s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 1s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 0s.                 [5;78H[?25h[H[J[1;1H[H[J[1;1H  Booting `Valtus 0.1.0 - live session'
+
+
+Valtus 0.1.0 'granite' valtus ttyS0
+
+valtus login: valtus
+Password: 
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+Valtus 0.1.0 'granite'
+
+Welcome. This system is based on Ubuntu 24.04 LTS. Valtus is an independent
+distribution; it is not affiliated with or endorsed by Canonical Ltd. or the
+KDE community. Ubuntu and related marks are trademarks of Canonical Ltd.
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+[?2004hvaltus@valtus:~$ echo Valtus-T3st-Pass2026 | sudo -S whoami >/dev/null && echo SUDO-OK
+[?2004l[sudo] password for valtus: test -x /usr/bin/valtus-install && echo VALINST-OK
+Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ test -x /usr/bin/valtus-install && echo VALINST-OK
+[?2004lVALINST-OK
+[?2004hvaltus@valtus:~$ ls /usr/share/calamares/branding/valtus/branding.desc >/dev/null 2>&1 && echo BRAND-OK
+[?2004lBRAND-OK
+[?2004hvaltus@valtus:~$ calamares --version
+[?2004lqt.qpa.xcb: could not connect to display 
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+Available platform plugins are: eglfs, linuxfb, minimal, minimalegl, offscreen, vnc, wayland-egl, wayland, wayland-xcomposite-egl, wayland-xcomposite-glx, xcb.
+
+Aborted (core dumped)
+[?2004hvaltus@valtus:~$ mkdir -p /home/valtus/.calamares-test
+[?2004l[?2004hvaltus@valtus:~$ echo Valtus-T3st-Pass2026 | sudo -S base64 -d > /etc/calamares/modules-unattended.conf << 'B64EOF'
+[?2004l[?2004h> dXNlcjogdmFsdHVzdGVzdAp1c2VyRnVsbG5hbWU6IFZhbHR1cyBUZXN0CnVzZXJQYXNzd29yZDogJDYkZ0RtTjgybVpVQUVJajVmUiRoTEU4Qmt3dm04U09jVldWUnowcklTODRrQ2kvYUlWRDlEUE5rcTgzblNQTEhjbDJLU21mVW8uV2drNERmUnovVzNuUkZuQzY0MHFtU1pyUDZRbW9DLwp1c2VyR3JvdXBzOiBzdWRvLGFkbSxjZHJvbSxkaXAscGx1Z2RldixscGFkbWluLHNhbWJhc2hhcmUKaG9zdG5hbWU6IHZhbHR1c3Rlc3QK
+[?2004l[?2004h> B64EOF
+[?2004l-bash: /etc/calamares/modules-unattended.conf: Permission denied
+[?2004hvaltus@valtus:~$ echo Valtus-T3st-Pass2026 | sudo -S sed -i 's/^\( *\)unattended: false/\1unattended: true/' /etc/calamares/settings.conf
+[?2004l[sudo] password for valtus: grep -n unattended /etc/calamares/settings.conf | head -2
+Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ grep -n unattended /etc/calamares/settings.conf | head -2
+[?2004l92:  # and by unattended deployments). The installer is still run as the
+94:  unattended: false
+[?2004hvaltus@valtus:~$ QT_QPA_PLATFORM=offscreen calamares -b valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=$?
+[?2004lINSTALL-RC=1
+[?2004hvaltus@valtus:~$ echo ===INSTLOG===; head -60 /tmp/inst.log
+[?2004l===INSTLOG===
+calamares: Unknown option 'b'.
+[?2004hvaltus@valtus:~$ echo Valtus-T3st-Pass2026 | sudo -S systemctl poweroff
+[?2004l[sudo] password for valtus: Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ 
