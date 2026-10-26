@@ -132,13 +132,22 @@ if [ -z "$HASH" ]; then echo "FAIL: could not hash the test password"; kill $QPI
 # FIRST thing in the pipeline: `echo PASS | sudo -S tee FILE`, never
 # `printf ... | sudo -S tee FILE`.
 send "mkdir -p /home/$LIVE_USER/.calamares-test"
-send "echo $USER_PASS | sudo -S tee /etc/calamares/modules-unattended.conf > /dev/null << 'CFGEOF'
+# Write the unattended config as root. NOTE: a `tee << HEREDOC` after a pipe
+# does not work — the heredoc lines drain sudo's -S stdin. Instead generate the
+# file locally on the build host and copy it in with a single sudo call.
+cat > "$W/unattended.conf" <<EOF
 user: $USER_NAME
 userFullname: Valtus Test
 userPassword: $HASH
 userGroups: sudo,adm,cdrom,dip,plugdev,lpadmin,sambashare
 hostname: $USER_NAME
-CFGEOF"
+EOF
+# Expose it to the guest over the serial console as base64 (avoids all shell
+# quoting/history issues with special characters in the password hash).
+B64=$(base64 -w0 "$W/unattended.conf" 2>/dev/null || base64 "$W/unattended.conf" | tr -d '\n')
+send "echo $USER_PASS | sudo -S base64 -d > /etc/calamares/modules-unattended.conf << 'B64EOF'"
+send "$B64"
+send "B64EOF"
 sleep 3
 send "echo $USER_PASS | sudo -S sed -i 's/^\( *\)unattended: false/\1unattended: true/' /etc/calamares/settings.conf"
 send "grep -n unattended /etc/calamares/settings.conf | head -2"
@@ -147,7 +156,9 @@ wait_pat "unattended: true" 60 && echo "PASS: unattended config written"
 
 # Run the installer as the live user (no sudo).
 # Run the installer as the live user, with Valtus branding (stock settings).
-send "calamares -b valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=\$?"
+# QT_QPA_PLATFORM=offscreen: the serial console has no X display, and
+# unattended mode needs no GUI. This is the documented headless path.
+send "QT_QPA_PLATFORM=offscreen calamares -b valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=\$?"
 wait_pat "INSTALL-RC" 900 || { echo "FAIL: installer did not finish"; tail -30 "$W/serial.log"; kill $QPID $SPID $KPID 2>/dev/null; exit 1; }
 # Capture the installer's own log — a core dump here needs its stderr.
 send "echo ===INSTLOG===; head -60 /tmp/inst.log"
