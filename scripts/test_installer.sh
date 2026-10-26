@@ -132,7 +132,7 @@ if [ -z "$HASH" ]; then echo "FAIL: could not hash the test password"; kill $QPI
 # FIRST thing in the pipeline: `echo PASS | sudo -S tee FILE`, never
 # `printf ... | sudo -S tee FILE`.
 send "mkdir -p /home/$LIVE_USER/.calamares-test"
-send "echo $USER_PASS | sudo -S tee /home/$LIVE_USER/.calamares-test/unattended.conf > /dev/null << 'CFGEOF'
+send "echo $USER_PASS | sudo -S tee /etc/calamares/modules-unattended.conf > /dev/null << 'CFGEOF'
 user: $USER_NAME
 userFullname: Valtus Test
 userPassword: $HASH
@@ -140,15 +140,14 @@ userGroups: sudo,adm,cdrom,dip,plugdev,lpadmin,sambashare
 hostname: $USER_NAME
 CFGEOF"
 sleep 3
-send "echo $USER_PASS | sudo -S cp /etc/calamares/modules-unattended.conf /home/$LIVE_USER/.calamares-test/modules-unattended.conf"
-send "echo $USER_PASS | sudo -S cp /etc/calamares/settings.conf /home/$LIVE_USER/.calamares-test/settings.conf"
-send "echo $USER_PASS | sudo -S sed -i 's/^  unattended: false/  unattended: true/' /home/$LIVE_USER/.calamares-test/settings.conf"
-send "grep unattended /home/$LIVE_USER/.calamares-test/settings.conf | head -2"
+send "echo $USER_PASS | sudo -S sed -i 's/^\( *\)unattended: false/\1unattended: true/' /etc/calamares/settings.conf"
+send "grep -n unattended /etc/calamares/settings.conf | head -2"
 sleep 3
 wait_pat "unattended: true" 60 && echo "PASS: unattended config written"
 
 # Run the installer as the live user (no sudo).
-send "calamares -c /home/$LIVE_USER/.calamares-test -b valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=\$?"
+# Run the installer as the live user, with Valtus branding (stock settings).
+send "calamares -b valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=\$?"
 wait_pat "INSTALL-RC" 900 || { echo "FAIL: installer did not finish"; tail -30 "$W/serial.log"; kill $QPID $SPID $KPID 2>/dev/null; exit 1; }
 # Capture the installer's own log — a core dump here needs its stderr.
 send "echo ===INSTLOG===; head -60 /tmp/inst.log"
