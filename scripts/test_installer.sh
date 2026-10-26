@@ -30,8 +30,10 @@ LOG="$P/logs/installer-test-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$LOG" "$W"
 
 # The installed account credentials for the test.
+# NOTE: avoid '!' and backticks — the guest shells are interactive and bash
+# history expansion would mangle them (this broke the sudo cascade).
 USER_NAME="valtustest"
-USER_PASS="V4ltus-Test-Pass!"
+USER_PASS="Valtus-T3st-Pass2026"
 
 echo "== creating disposable disk ($DISK_SIZE) =="
 qemu-img create -f qcow2 "$W/disk.qcow2" "$DISK_SIZE" >/dev/null
