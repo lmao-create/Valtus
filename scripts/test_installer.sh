@@ -148,6 +148,18 @@ wait_pat "unattended: true" 60 && echo "PASS: unattended config written"
 # Run the installer as the live user (no sudo).
 send "calamares -c /home/$LIVE_USER/.calamares-test -b valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=\$?"
 wait_pat "INSTALL-RC" 900 || { echo "FAIL: installer did not finish"; tail -30 "$W/serial.log"; kill $QPID $SPID $KPID 2>/dev/null; exit 1; }
+# Capture the installer's own log — a core dump here needs its stderr.
+send "echo ===INSTLOG===; head -60 /tmp/inst.log"
+sleep 4
+echo "=== installer log from guest ==="
+python3 - "$W/serial.log" <<'PY'
+import sys, re
+raw = open(sys.argv[1], 'rb').read().decode('utf-8', 'replace')
+clean = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', raw).replace('\r', '')
+i = clean.find('===INSTLOG===')
+if i >= 0:
+    print(clean[i:i+2200])
+PY
 
 echo "== installer finished; powering off the live system =="
 send "echo $USER_PASS | sudo -S systemctl poweroff"
