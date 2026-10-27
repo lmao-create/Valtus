@@ -109,7 +109,7 @@ echo "== configuring and starting the installer =="
 # Users module: username/password for the installed system are passed on the
 # command line via the calamares "unattended" mechanism (no default password
 # is written anywhere; the test chooses its own).
-send "echo $USER_PASS | sudo -S whoami >/dev/null && echo SUDO-OK"
+send "echo  | sudo -S whoami >/dev/null && echo SUDO-OK"
 wait_pat "SUDO-OK" 30
 # Verify the installer is present and branded.
 send "test -x /usr/bin/valtus-install && echo VALINST-OK"
@@ -148,11 +148,11 @@ EOF
 B64=$(base64 -w0 "$W/unattended.conf" 2>/dev/null || base64 "$W/unattended.conf" | tr -d '\n')
 send "echo $B64 | base64 -d > /home/$LIVE_USER/.calamares-test/u.b64"
 sleep 3
-send "echo $USER_PASS | sudo -S cp /home/$LIVE_USER/.calamares-test/u.b64 /etc/calamares/modules-unattended.conf"
+send "echo  | sudo -S cp /home/$LIVE_USER/.calamares-test/u.b64 /etc/calamares/modules-unattended.conf"
 sleep 6
-send "echo $USER_PASS | sudo -S chown root:root /etc/calamares/modules-unattended.conf"
+send "echo  | sudo -S chown root:root /etc/calamares/modules-unattended.conf"
 sleep 6
-send "echo $USER_PASS | sudo -S sed -i 's/^\( *\)unattended: false/\1unattended: true/' /etc/calamares/settings.conf"
+send "echo  | sudo -S sed -i 's/^\( *\)unattended: false/\1unattended: true/' /etc/calamares/settings.conf"
 sleep 6
 send "grep -n 'unattended: ' /etc/calamares/settings.conf | head -2"
 sleep 5
@@ -179,7 +179,7 @@ if i >= 0:
 PY
 
 echo "== installer finished; powering off the live system =="
-send "echo $USER_PASS | sudo -S systemctl poweroff"
+send "echo  | sudo -S systemctl poweroff"
 wait_pat "Power down\|power off" 180
 sleep 5
 kill $QPID $SPID $KPID 2>/dev/null
