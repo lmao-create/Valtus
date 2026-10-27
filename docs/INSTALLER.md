@@ -2,23 +2,20 @@
 
 ## Status
 
-**Shipped and integrated.** Calamares 3.3.5 (noble) with Valtus branding,
-launcher `/usr/bin/valtus-install`, and menu entry are built into the ISO and
+**Shipped and integrated.** Calamares 3.3.5 (noble) + Valtus branding + the
+launcher `/usr/bin/valtus-install` + menu entry are built into the ISO and
 verified present in the image.
 
-**Automated install test: blocked.** The scripted install runs up to the point
-of launching Calamares, but the unattended run does not complete. The
-diagnosed causes and their state are recorded below so the next session can
-finish it.
+**Automated install test: blocked.** See §6 for the exact remaining work.
 
 ## 1. Components
 
 | Component | Package | Role |
 |---|---|---|
 | Installer front-end | `calamares` (3.3.5-0ubuntu4) | Guided install flow, branding |
-| Partitioning | `libkpmcore12` (23.08.5) | Partition operations |
-| OS detection | `os-prober` | Existing-system detection (dual boot) |
-| Bootloader | `grub2-common`, `grub-efi-amd64-signed`, `shim-signed` | UEFI GRUB chain |
+| Partitioning | `libkpmcore12` (23.08.5-0ubuntu3) | Partition operations |
+| OS detection | `os-prober` (1.81ubuntu4) | Existing-system detection (dual boot) |
+| Bootloader | `grub2-common`, `grub-efi-amd64-signed`, `shim-signed` (in image) | UEFI GRUB chain |
 
 ## 2. Files in the image
 
@@ -27,7 +24,6 @@ finish it.
 | `/usr/share/calamares/branding/valtus/` | `branding.desc` ("Install Valtus"), CSS, logo, sidebar |
 | `/usr/bin/valtus-install` | launcher — refuses root, uses polkit, no credentials stored |
 | `/usr/share/applications/valtus-installer.desktop` | menu entry |
-| `/etc/calamares/` | **kept to Calamares' stock defaults** — see §5 |
 
 ## 3. Launcher behaviour
 
@@ -39,40 +35,60 @@ username/password are chosen by the operator in the installer's users page.
 
 `scripts/test_installer.sh` creates a disposable 64 GiB qcow2, boots the
 release ISO with it attached, installs, then boots the installed system with
-the ISO detached. It writes serial logs and screenshots to
+the ISO detached. Serial logs and screenshots go to
 `logs/installer-test-<timestamp>/`.
 
-## 5. Decision: stock Calamares configuration
+## 5. Settings.conf — the open problem
 
-An earlier revision shipped a hand-written `settings.conf`. Calamares aborted
-at startup with:
+**Ubuntu's `calamares` package ships no `settings.conf`.** It expects the
+distro to provide one via `calamares-settings-ubuntu`, **which does not exist
+in noble's package index** (verified: `MISSING calamares-settings-ubuntu`).
+
+Without one, Calamares aborts immediately:
+
+```
+ERROR: Cowardly refusing to continue startup without settings.
+   "/home/valtus/settings.conf" "/etc/calamares/settings.conf"
+   "/usr/share/calamares/settings.conf"
+ERROR: FATAL: none of the expected configuration file paths exist.
+```
+
+So Valtus **must ship its own**, but its shape must match the module set that
+calamares actually ships. An earlier hand-written version failed with:
 
 ```
 YAML error yaml-cpp: error at line 7, column 5: bad conversion ... "- model:"
 ERROR: FATAL: no sequence set.
 ```
 
-The shape of `settings.conf` must match the module set the Ubuntu calamares
-package ships exactly; a mismatch is fatal. The build therefore **installs only
-the branding and launcher** and removes any stale `settings.conf`, leaving
-Calamares' guaranteed-compatible built-in defaults in place. The Valtus policy
-files (no empty passwords, Valtus bootloader entry) are re-applied as
-per-module overrides **once the stock module list is confirmed**.
+i.e. the `modules-search`/instances structure did not match. The current build
+therefore ships no settings.conf, and the installer is present but not yet
+runnable.
+
+**Next step:** enumerate the modules Calamares actually ships
+(`/usr/lib/calamares/modules` and `/usr/share/calamares`) and write
+`settings.conf` against that exact list, then re-test.
 
 ## 6. Remaining work
 
-1. Boot the rebuilt ISO and confirm Calamares starts (the FIXED build).
-2. Complete the unattended install: the remaining defect was that the live
-   session's sudo password expanded to empty in the harness — the test must
-   use the live-session credential (`config/valtus.env`), not the
-   installed-account one, and the base64 config transfer must be verified.
-3. Boot the installed system and verify branding, network, AV, hostname.
-4. Re-apply the users/bootloader module policy against the stock module list.
-5. Test Secure Boot and LUKS (documented; not covered yet).
+1. List the shipped modules and write a matching `settings.conf`
+   (see §5). Candidate minimal set: `partition` (kpmcore), `users`,
+   `bootloader`, `grubcfg`, `fstab`, `unpackfs`, `packages`, plus the
+   welcome/locale/keyboard pages.
+2. Fix the harness' live-session sudo: `$LIVE_USER_PASSWORD` expands to empty
+   in the test (observed `echo  | sudo`). The live-session credential comes
+   from `config/valtus.env`; the installed-account credential is only for the
+   final verification.
+3. Complete the unattended install (base64 config transfer was fixed; the
+   password expansion above is the blocker).
+4. Boot the installed system and verify branding, network, AV, hostname.
+5. Re-apply users/bootloader policy as per-module overrides once the module
+   list is known.
+6. Test Secure Boot and LUKS (documented; not covered yet).
 
 ## 7. Known limitations
 
-- No installer branding in the *slideshow* beyond the sidebar/logo.
-- Unattended mode is driven by the `unattended` module; the generated
-  credentials are created by the test at run time and never committed.
+- No slideshow branding beyond the sidebar/logo.
+- Unattended credentials are generated by the test at run time and never
+  committed.
 - Secure Boot verification of the installed system is untested.
