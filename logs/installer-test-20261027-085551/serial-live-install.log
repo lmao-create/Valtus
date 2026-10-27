@@ -1,0 +1,90 @@
+[22;1H   The highlighted entry will be executed automatically in 2s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 1s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 0s.                 [5;78H[?25h[H[J[1;1H[H[J[1;1H  Booting `Valtus 0.1.0 - live session'
+
+ln: /root/usr/lib/update-notifier/apt-check: No such file or directory
+ln: /root/usr/lib/ubuntu-release-upgrader/check-new-release: No such file or directory
+ln: /root/usr/lib/ubuntu-release-upgrader/check-new-release-gtk: No such file or directory
+Using CD-ROM mount point /cdrom/
+Identifying... [ec66baa5158cc37d573a271bd89aac5e-2]
+Scanning disc for index files...
+Found 0 package indexes, 0 source indexes, 0 translation indexes and 0 signatures
+E: Unable to locate any package files, perhaps this is not a Debian Disc or the wrong architecture?
+E: No CD-ROM could be auto-detected or found using the default mount point.
+   You may try the --cdrom option to set the CD-ROM mount point.
+   See 'man apt-cdrom' for more information about the CD-ROM auto-detection and mount point.
+chown: warning: '.' should be ':': 'valtus.valtus'
+chown: warning: '.' should be ':': 'valtus.valtus'
+
+Valtus 0.1.0 'granite' valtus ttyS0
+
+valtus login: valtus
+Password: 
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+Valtus 0.1.0 'granite'
+
+Welcome. This system is based on Ubuntu 24.04 LTS. Valtus is an independent
+distribution; it is not affiliated with or endorsed by Canonical Ltd. or the
+KDE community. Ubuntu and related marks are trademarks of Canonical Ltd.
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+[?2004hvaltus@valtus:~$ echo  | sudo -S whoami >/dev/null && echo SUDO-OK
+[?2004l[sudo] password for valtus: Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ test -x /usr/bin/valtus-install && echo VALINST-OK
+[?2004lVALINST-OK
+[?2004hvaltus@valtus:~$ ls /usr/share/calamares/branding/valtus/branding.desc >/dev/null 2>&1 && echo BRAND-OK
+[?2004lBRAND-OK
+[?2004hvaltus@valtus:~$ calamares --version
+[?2004lqt.qpa.xcb: could not connect to display 
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+Available platform plugins are: eglfs, linuxfb, minimal, minimalegl, offscreen, vnc, wayland-egl, wayland, wayland-xcomposite-egl, wayland-xcomposite-glx, xcb.
+
+Aborted (core dumped)
+[?2004hvaltus@valtus:~$ mkdir -p /home/valtus/.calamares-test
+[?2004l[?2004hvaltus@valtus:~$ echo dXNlcjogdmFsdHVzdGVzdAp1c2VyRnVsbG5hbWU6IFZhbHR1cyBUZXN0CnVzZXJQYXNzd29yZDogJDYkdElJU1ZrN1V6bUVLMktqaSRtRURDVzFaMHZ0d2EyMENlT1dNYVFGSmRnUkFubFhteEllenAvQU95alVManllOU9URjY1Y2MyVkNkTy9YRGtZRFNpbGI0ZjJzMEJ6NkwwSWVLYlVYMAp1c2VyR3JvdXBzOiBzdWRvLGFkbSxjZHJvbSxkaXAscGx1Z2RldixscGFkbWluLHNhbWJhc2hhcmUKaG9zdG5hbWU6IHZhbHR1c3Rlc3QK | base64 -d > /home/valtus/.calamares-test/u.b64
+[?2004l[?2004hvaltus@valtus:~$ echo  | sudo -S cp /home/valtus/.calamares-test/u.b64 /etc/calamares/modules-unattended.conf
+[?2004l[sudo] password for valtus: Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ echo  | sudo -S chown root:root /etc/calamares/modules-unattended.conf
+[?2004l[sudo] password for valtus: Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ echo  | sudo -S sed -i 's/^\( *\)unattended: false/\1unattended: true/' /etc/calamares/settings.conf
+[?2004l[sudo] password for valtus: Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ grep -n 'unattended: ' /etc/calamares/settings.conf | head -2
+[?2004l94:  unattended: false
+[?2004hvaltus@valtus:~$ QT_QPA_PLATFORM=offscreen calamares -d valtus > /tmp/inst.log 2>&1; echo INSTALL-RC=$?
+[?2004lINSTALL-RC=1
+[?2004hvaltus@valtus:~$ echo ===INSTLOG===; head -60 /tmp/inst.log
+[?2004l===INSTLOG===
+08:58:10 [6]: Calamares::Settings::Settings(const QString&, bool)
+    Using Calamares settings file at "/etc/calamares/settings.conf" 
+08:58:10 [2]: void Calamares::YAML::explainException(const YAML::Exception&, const QByteArray&, const QString&)
+    WARNING: YAML error  yaml-cpp: error at line 7, column 5: bad conversion in "/etc/calamares/settings.conf" . 
+08:58:10 [2]: void Calamares::YAML::explainException(const YAML::Exception&, const QByteArray&)
+    WARNING: offending YAML data:   - model: 
+08:58:10 [1]: static Calamares::Settings* Calamares::Settings::init(bool)
+    ERROR: FATAL: no sequence set. 
+[?2004hvaltus@valtus:~$ echo  | sudo -S systemctl poweroff
+[?2004l[sudo] password for valtus: Sorry, try again.
+[sudo] password for valtus: 
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+[?2004hvaltus@valtus:~$ 

@@ -519,21 +519,14 @@ EOF
       rsvg-convert -w 420 -h 840 "$PROJECT_DIR/$DISTRO_WALLPAPER_SVG" \
         -o "$ROOTFS$CBR/valtus-sidebar.png" 2>/dev/null || true
       # Settings: use Calamares' OWN stock configuration. A hand-written
-      # settings.conf is fragile — it must match exactly the module set the
-      # Ubuntu calamares package ships, and a mismatch aborts the installer
-      # before it starts (observed: core dump with empty stderr). Calamares'
-      # stock config is guaranteed compatible with its own modules.
-      # Only our branding and launcher are added on top.
+      # settings.conf is fragile — its shape must match the calamares module
+      # set exactly, and a mismatch aborts the installer at startup
+      # (FATAL: no sequence set). Remove any stale copy from earlier builds or
+      # cached snapshots; Calamares' built-in defaults are always compatible.
       mkdir -p "$ROOTFS/etc/calamares"
-      # (modules-*.conf overrides are installed only if the stock settings.conf
-      # already references those modules — verified below.)
-      if [ -f "$ROOTFS/etc/calamares/settings.conf" ] && grep -q "users" "$ROOTFS/etc/calamares/settings.conf" 2>/dev/null; then
-        install -m 0644 "$PROJECT_DIR/config/installer/modules/users.conf" \
-          "$ROOTFS/etc/calamares/modules-users.conf"
-        log "users policy (no empty passwords) installed"
-      else
-        log "note: stock calamares settings.conf not found; no module overrides"
-      fi
+      rm -f "$ROOTFS/etc/calamares/settings.conf"
+      rm -f "$ROOTFS"/etc/calamares/modules-{bootloader,fstab,grubcfg,packages,unattended,users}.conf
+      log "calamares settings reset to stock (branding + launcher only)"
       # launcher + desktop entry (so the installer can be started from the menu)
       install -m 0755 "$PROJECT_DIR/scripts/valtus-install" "$ROOTFS/usr/bin/valtus-install"
       install -m 0644 "$PROJECT_DIR/config/installer/valtus-installer.desktop" \
