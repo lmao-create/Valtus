@@ -524,9 +524,19 @@ EOF
       # (FATAL: no sequence set). Remove any stale copy from earlier builds or
       # cached snapshots; Calamares' built-in defaults are always compatible.
       mkdir -p "$ROOTFS/etc/calamares"
+      # Ubuntu's calamares package ships NO settings.conf (calamares-settings-ubuntu
+      # does not exist in noble), so Valtus must supply one. Install ours — it is
+      # written against the module paths actually shipped by the package
+      # (/usr/lib/<multiarch>/calamares/modules/, verified). Any stale copy from
+      # an earlier, malformed revision must be removed first.
       rm -f "$ROOTFS/etc/calamares/settings.conf"
-      rm -f "$ROOTFS"/etc/calamares/modules-{bootloader,fstab,grubcfg,packages,unattended,users}.conf
-      log "calamares settings reset to stock (branding + launcher only)"
+      install -m 0644 "$PROJECT_DIR/config/installer/settings.conf" \
+        "$ROOTFS/etc/calamares/settings.conf"
+      # Users policy: no empty passwords (compatible with the users module).
+      install -m 0644 "$PROJECT_DIR/config/installer/modules/users.conf" \
+        "$ROOTFS/etc/calamares/modules-users.conf"
+      rm -f "$ROOTFS"/etc/calamares/modules-{bootloader,fstab,grubcfg,packages,unattended}.conf
+      log "calamares settings.conf installed (correct module paths)"
       # launcher + desktop entry (so the installer can be started from the menu)
       install -m 0755 "$PROJECT_DIR/scripts/valtus-install" "$ROOTFS/usr/bin/valtus-install"
       install -m 0644 "$PROJECT_DIR/config/installer/valtus-installer.desktop" \
