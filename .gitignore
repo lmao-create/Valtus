@@ -10,6 +10,9 @@ releases/known-good/
 *.raw
 *.img
 *.vhdx
+valtus-inst-test/
+logs/vm-test-*/
+logs/installer-test-*/
 
 # --- Local overrides for sensitive values (env-file pattern) ----------------
 config/valtus.local.env
@@ -20,22 +23,18 @@ logs/*.manifest.txt
 logs/*.ppm
 logs/*.png
 logs/*.serial
-logs/vm-test-*/
 logs/os-release.built.txt
 logs/lsb-release.built.txt
 build/
-.valtus-vm-test-*/
 
 # --- Antivirus build outputs (built by scripts/build-valtus-security.sh) ----
-# The debs and staging trees are generated; the source project lives outside
-# this repository. Keep the build script and docs, never the artifacts.
 *.deb
 av-build/
-
-# --- Scratch rootfs copies used by dev verification scripts -----------------
-# (e.g. /root/valtus-av-test, /root/valtus-av-clean inside WSL; the rules are
-# here in case such directories are ever created inside the workspace)
 valtus-av-*/
+
+# --- Calamares scratch / crash dumps ----------------------------------------
+core
+core.*
 
 # --- Python / editor noise ---------------------------------------------------
 __pycache__/
