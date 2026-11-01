@@ -1,120 +1,173 @@
-# Valtus
+# Valtus 0.1.0 "granite" — Development Preview
 
-**Valtus** is a professional, general-purpose Linux distribution for desktop
-computers, built from an Ubuntu LTS base with a KDE Plasma desktop, an
-original visual identity, and a security-first design.
+**A professional, security-focused desktop Linux distribution — built on Ubuntu LTS with KDE Plasma.**
 
-- **Base:** Ubuntu 24.04 LTS (noble), amd64, supported upstream kernel (6.8.0-147-generic)
-- **Desktop:** KDE Plasma 6 (Wayland default, X11 fallback), original Valtus theme
-- **Build:** fully scripted and reproducible (debootstrap → apt → squashfs →
-  GRUB hybrid ISO), no hand-crafted steps
-- **Security:** locked root, password-required sudo, firewall default-deny
-  incoming, unattended security upgrades, AppArmor, kernel hardening backend
-- **Licensing:** build scripts docs MIT; included system software retains
-  upstream licenses — see [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)
+> ⚠️ This is a **development preview** (0.1.0), not a stable release.
+> It is a fully working **live** system. Disk installation is not yet enabled — see below.
 
-> **Status:** version 0.1.0 *development* release candidate. A live-session
-> image is the current milestone; the disk installer is planned next. See
-> [docs/TESTING.md](docs/TESTING.md) for what has been tested and what has
-> not.
+---
 
-**Included in this build:** KDE Plasma 6 desktop, Valtus theme + wallpaper +
-welcome app, system hardening (locked root, ufw, AppArmor, unattended-upgrades,
-sysctl hardening), NetworkManager, and **Valtus Security** — the built-in
-ClamAV antivirus and system-protection centre (on-demand scanning, protected
-quarantine, signature updates, firewall/update status; runs unprivileged with
-a polkit helper). See [docs/ANTIVIRUS-INTEGRATION.md](docs/ANTIVIRUS-INTEGRATION.md).
+## What Valtus is
 
-## Documentation
+Valtus is an independent Linux distribution for desktop computers, built from an
+Ubuntu 24.04 LTS (noble) base with the KDE Plasma 6 desktop. It has its own
+visual identity — original logo, wallpaper, and color scheme — and ships with
+**Valtus Security**, a built-in ClamAV-based antivirus.
 
-| Document | Contents |
-|---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Design, security model, boot flow, package rationale |
-| [docs/BUILD.md](docs/BUILD.md) | Reproducing the ISO (environment setup + exact commands) |
-| [docs/TESTING.md](docs/TESTING.md) | Test matrix, results, VM configuration, evidence |
-| [docs/INSTALLATION.md](docs/INSTALLATION.md) | System requirements, live credentials, install workflow |
-| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common problems and fixes |
-| [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) | Build-host environment report |
-| [CHANGELOG.md](CHANGELOG.md) | Version history and known limitations |
+## System requirements
 
-## Repository layout
+| Requirement | Minimum | Recommended |
+|---|---|---|
+| Architecture | x86-64 (amd64) | x86-64 |
+| RAM | 2 GB | 4 GB+ |
+| Disk space | 2 GB (live media) | 20 GB+ (installation) |
+| Firmware | BIOS or UEFI | UEFI |
+| Graphics | any VESA/DRM card | modern Intel/AMD GPU |
 
-```
-.
-├── Makefile                  make build / validate / checksum / smoke / vmtest
-├── README.md  LICENSE  CHANGELOG.md  THIRD-PARTY-LICENSES.md
-├── config/
-│   ├── distro.conf           identity, versions, desktop, branding defaults
-│   ├── valtus.env            credentials & sensitive defaults (env-file)
-│   ├── packages/             base.txt desktop.txt security.txt
-│   ├── desktop/              skel defaults, look-and-feel, wallpaper meta
-│   └── rootfs/               system overlay copied into the image (/etc ...)
-├── branding/
-│   ├── logos/                valtus-logo.svg, valtus-emblem.svg (+ rendered PNG)
-│   ├── wallpapers/           valtus-wallpaper.svg (+ rendered PNG)
-│   └── themes/               ValtusDark.colors
-├── scripts/
-│   ├── build.sh              reproducible ISO pipeline (staged, cached)
-│   ├── validate.sh           static ISO checks (size, sha256, structure)
-│   ├── checksums.sh          release SHA-256 sidecars
-│   ├── test_vm.sh            QEMU/KVM automated tests + evidence
-│   ├── valtus-welcome.py     welcome application (PyQt6)
-│   └── dev/                  development helpers (recovery, inspection)
-├── tests/smoke_test.sh       static repository checks (no root needed)
-├── docs/                     all documentation
-├── logs/                     build logs and VM test evidence (not committed)
-└── releases/                 built ISOs + sha256 + manifest (not committed)
-```
+## Download
 
-## Quick start
+| File | Size | SHA-256 |
+|---|---|---|
+| `valtus-0.1.0-amd64.iso` | 2,118,694,912 B (~1.97 GiB) | `783d4923133d262577dd3ffa97c4e4ae98c406a6d4038c3ea83e308261039dae` |
 
-Requires a WSL2 Linux environment (or any Debian-based x86-64 host) with the
-packages listed in `docs/BUILD.md`.
+Verify before use:
 
 ```bash
-# 1. one-time host setup (Debian WSL)
-wsl -d Debian -u root -- make deps
-
-# 2. build the ISO (runs as root inside WSL, ~40-70 min first time)
-wsl -d Debian -u root -- bash '/mnt/c/Users/hp/Desktop/Custom OS/scripts/build.sh'
-
-# 3. validate + boot test
-wsl -d Debian -u root -- bash '/mnt/c/Users/hp/Desktop/Custom OS/scripts/validate.sh' \
-  '/mnt/c/Users/hp/Desktop/Custom OS/releases/valtus-0.1.0-amd64.iso'
-wsl -d Debian -u root -- bash '/mnt/c/Users/hp/Desktop/Custom OS/scripts/test_vm.sh' \
-  '/mnt/c/Users/hp/Desktop/Custom OS/releases/valtus-0.1.0-amd64.iso'
-```
-
-Result: `releases/valtus-0.1.0-amd64.iso` (+ `.sha256`, `.manifest.txt`,
-`.build.log`). Boot either BIOS or UEFI. Full instructions and results:
-[docs/BUILD.md](docs/BUILD.md), [docs/TESTING.md](docs/TESTING.md).
-
-## Current release
-
-| | |
-|---|---|
-| ISO | `releases/valtus-0.1.0-amd64.iso` |
-| Size | 2,113,798,144 bytes (~1.97 GiB) |
-| SHA-256 | `dd986696aaf87c9bc90212224ba3d507be54edb5bd84a9cd4eaf2564f5a41608` |
-| Kernel | 6.8.0-147-generic (Ubuntu noble) |
-| Packages | 1538 + Valtus Security |
-
-(Checksums and exact values are also in the release `.manifest.txt`.)
-
-## Writing the ISO to a USB stick (Linux/macOS)
-
-```bash
-sudo dd if=valtus-0.1.0-amd64.iso of=/dev/sdX bs=4M status=progress oflag=sync
+sha256sum -c valtus-0.1.0-amd64.iso.sha256
 ```
 
 ## Live login
 
-User **valtus**, password **valtus** — fixed, documented live-only credentials
-(threat model: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) §5.1).
+User **`valtus`**, password **`valtus`** — fixed, documented, live-session-only
+credentials (see *Security* below for why this is acceptable here and not for
+an installed system).
 
-## Project identity
+---
 
-Name **Valtus**, version 0.1.0, codename **granite**, live user **valtus**.
-All of it is configurable in `config/distro.conf`; credentials live only in
-`config/valtus.env`. Valtus is an independent project; it is not affiliated
-with Canonical Ltd. (Ubuntu) or the KDE project.
+## ✅ What works
+
+| Area | Status |
+|---|---|
+| **Boot (Live)** | ✅ Verified in QEMU/KVM and VirtualBox. GRUB → Linux 6.8.0 → live desktop. |
+| **Login screen** | ✅ SDDM with Valtus wallpaper/theme. |
+| **Desktop** | ✅ KDE Plasma 6, Wayland, ValtusDark color scheme, bottom panel (launcher, taskbar, system tray, clock). |
+| **Live session** | ✅ Logs in with the documented credentials; welcome app opens at first login. |
+| **Networking** | ✅ NetworkManager (wired), DHCP, DNS verified in-VM. |
+| **Package management** | ✅ `apt` works: `apt-get update` and installing a package verified from inside the live system. |
+| **Applications** | ✅ Konsole, Dolphin, Kate, Okular, Falkon, VLC, Ark, Spectacle, Plasma Discover, System Settings, KInfoCenter, Plasma System Monitor, KCalc. |
+| **Security** | ✅ Root account locked, password-required sudo, firewall active by default, automatic security updates enabled, AppArmor active, kernel hardening sysctls. |
+| **Antivirus** | ✅ Valtus Security installed; EICAR test file detected; signatures update (3.6M). |
+| **Shutdown** | ✅ Shuts down cleanly. |
+| **Build reproducibility** | ✅ One command rebuilds the entire ISO from config. |
+
+## ❌ What does not work yet
+
+| Area | Status |
+|---|---|
+| **Disk installation** | ❌ **Not available.** The installer is packaged and branded but its configuration does not yet start. See below. |
+| **Installer branding** | ❌ Ships with the app, but since the installer doesn't start, this is untested. |
+| **Bluetooth / Wi-Fi** | ⚠️ Untested in the VM environment. |
+| **Printers / scanners** | ⚠️ Untested. |
+| **Secure Boot, LUKS encryption** | ⚠️ Untested. |
+| **Performance tuning** | ⚠️ Untuned (no tuning applied yet). |
+
+---
+
+## How to install Valtus to your disk
+
+> The graphical installer is **not functional in 0.1.0**. It appears in the menu
+> but will fail to start. These are the two methods that do work.
+
+### Option 1 — Risk-free: boot and test first (recommended for now)
+
+Burn the ISO to a USB stick and boot it — everything works from USB without
+touching your disk:
+
+```bash
+# Linux / macOS
+sudo dd if=valtus-0.1.0-amd64.iso of=/dev/sdX bs=4M status=progress oflag=sync
+sync
+```
+Windows: use Rufus or balenaEtcher in **DD image** mode.
+
+### Option 2 — Manual installation onto your disk (advanced)
+
+This copies the live system to your disk and installs GRUB. **Back up first —
+this erases the target disk.**
+
+```bash
+# Boot the ISO, log in as valtus / valtus
+sudo fdisk -l                       # find your disk, e.g. /dev/sdX — then reboot after partitioning
+sudo mkfs.ext4 /dev/sdX1            # root partition (make an ESP first for UEFI)
+sudo mount /dev/sdX1 /mnt           # ESP: mount at /mnt/boot/efi instead
+
+# Copy the live system (excluding virtual filesystems)
+sudo rsync -aAXH --exclude={/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/cdrom/*} / /mnt/
+
+for d in dev proc sys run; do sudo mount --bind /$d /mnt/$d; done
+sudo chroot /mnt
+
+grub-install /dev/sdX               # UEFI: grub-install --efi-directory=/boot/efi
+update-grub
+exit && sudo reboot
+```
+
+For a UEFI system, create a 512 MB EFI System Partition (FAT32) mounted at
+`/mnt/boot/efi` before `grub-install --efi-directory=/boot/efi`.
+
+### Option 3 — Wait for 0.2.0
+
+A one-click graphical installer is the top priority of the next release.
+
+---
+
+## Credits & attribution
+
+Valtus is only possible because of the free/open-source software it is built
+from. Full details in `THIRD-PARTY-LICENSES.md`.
+
+| Component | Author/Project | License |
+|---|---|---|
+| Ubuntu 24.04 LTS (base system) | Canonical Ltd. and contributors | GPL/LGPL/MIT/BSD (see package licenses) |
+| KDE Plasma 6 desktop | KDE community | GPL/LGPL |
+| Qt libraries | The Qt Company / Qt Project | LGPL/GPL |
+| Linux kernel | Linus Torvalds and contributors | GPL v2 |
+| casper (live boot), GRUB, systemd, NetworkManager, PipeWire | respective projects | GPL/LGPL/BSD |
+| ClamAV (antivirus engine) | Cisco Systems, Inc. / ClamAV project | GPL v2 |
+| Noto fonts | Google | SIL OFL 1.1 |
+| Valtus original branding, build scripts, docs | **Valtus project** | MIT / CC0 |
+
+**"Ubuntu" is a registered trademark of Canonical Ltd.** and **"KDE" is a
+trademark of KDE e.V.** Valtus is an independent distribution. It is **not
+affiliated with, endorsed by, or sponsored by Canonical Ltd., the KDE
+community, the Qt Company, or any other upstream project.**
+
+## A note on how Valtus was built
+
+Valtus was **vibe coded** — developed with an AI coding assistant rather than
+by a traditional engineering team. The scripts, configuration, branding, and
+documentation were produced conversationally, iteratively, and with
+machine assistance. It is an independent hobby project, not a commercially
+backed or professionally audited distribution; treat it accordingly.
+
+What that means in practice: the build is reproducible and the ISO works, but
+**the quality assurance is one enthusiast plus automated tests, not a
+professional QA organization.** Report issues rather than assuming correctness.
+
+## Security note
+
+- No SSH server is installed; the firewall blocks incoming connections.
+- Root login is disabled; admin tasks run through `sudo` with a password.
+- The live password is fixed and documented **by design for a live session
+  only** (the live ISO has no network services; root is locked). A fixed
+  password would be a serious weakness on a multi-user server — Valtus is a
+  desktop distribution.
+- An installed system (when available) will ask you to choose your own
+  password.
+- No telemetry, accounts, cloud services, or data collection are included.
+
+## License
+
+Original Valtus code (build scripts, branding, docs): MIT — see `LICENSE`.
+Third-party components retain their own licenses — see
+`THIRD-PARTY-LICENSES.md`.
