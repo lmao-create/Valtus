@@ -24,6 +24,22 @@ visual identity — original logo, wallpaper, and color scheme — and ships wit
 | Firmware | BIOS or UEFI | UEFI |
 | Graphics | any VESA/DRM card | modern Intel/AMD GPU |
 
+## Further instructions
+
+Full documentation is in the **`docs/` folder**:
+
+| Document | What's inside |
+|---|---|
+| `docs/INSTALLATION.md` | Step-by-step live boot, disk installation, and first-login setup |
+| `docs/BUILD.md` | How to rebuild the ISO from scratch, dependencies, reproducibility |
+| `docs/ARCHITECTURE.md` | System design, boot flow, and the security model |
+| `docs/TESTING.md` | What was tested, results, and known limitations |
+| `docs/INSTALLER.md` | Installer status and the remaining work |
+| `docs/ENVIRONMENT.md` | The host environment Valtus was built on |
+| `docs/ANTIVIRUS-INTEGRATION.md` | Valtus Security packaging and verification |
+| `THIRD-PARTY-LICENSES.md` | Full component licensing and attribution |
+| `CHANGELOG.md` | Version history |
+
 ## Download
 
 | File | Size | SHA-256 |
