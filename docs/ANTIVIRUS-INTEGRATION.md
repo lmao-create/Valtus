@@ -1,6 +1,5 @@
 # Valtus Antivirus — integration (IMPLEMENTED)
 
-Source project: `C:\Users\hp\Desktop\Valtus antivirus\valtus-security`
 (version 1.0.0, GPL-3.0-or-later, Python, ClamAV-based). **Status: built into
 the released ISO, installed, and functionally verified.**
 
